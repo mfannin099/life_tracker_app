@@ -16,6 +16,7 @@ def init_db():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS weights (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
             date TEXT NOT NULL,
             weight REAL NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -24,16 +25,16 @@ def init_db():
     conn.commit()
     conn.close()
 
-def insert_weight(date: str, weight: float):
+def insert_weight(name: str, date: str, weight: float):
     """Insert a new weight entry into the database."""
     conn = get_db_connection()
-    conn.execute('INSERT INTO weights (date, weight) VALUES (?, ?)', (date, weight))
+    conn.execute('INSERT INTO weights (name, date, weight) VALUES (?, ?, ?)', (name, date, weight))
     conn.commit()
     conn.close()
 
 def get_all_weights():
     """Retrieve all weight entries from the database."""
     conn = get_db_connection()
-    rows = conn.execute('SELECT id, date, weight, created_at FROM weights ORDER BY date').fetchall()
+    rows = conn.execute('SELECT id, name, date, weight, created_at FROM weights ORDER BY date').fetchall()
     conn.close()
     return [dict(row) for row in rows]

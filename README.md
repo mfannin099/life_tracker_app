@@ -4,10 +4,11 @@ A simple FastAPI application for tracking weight over time. Users can submit wei
 
 ## Features
 
-- Submit weight entries via POST request
+- Submit weight entries via POST request or web UI
 - Retrieve all weight entries via GET request
-- Automatic validation of date format (mm-dd-yyyy) and weight (pounds with one decimal place)
+- Automatic validation of name, date format (mm-dd-yyyy) and weight (pounds with one decimal place)
 - SQLite database for data persistence
+- Simple web interface at the root URL
 
 ## Installation
 
@@ -26,6 +27,10 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`.
 
+## Web Interface
+
+Visit `http://localhost:8000` in your browser for a simple web form to add weight entries and view recent entries.
+
 ## API Endpoints
 
 ### POST /weights
@@ -34,6 +39,7 @@ Submit a new weight entry.
 **Request Body:**
 ```json
 {
+  "name": "John Doe",
   "date": "04-14-2026",
   "weight": 150.5
 }
@@ -43,6 +49,7 @@ Submit a new weight entry.
 ```json
 {
   "message": "Weight entry added successfully",
+  "name": "John Doe",
   "date": "04-14-2026",
   "weight": 150.5
 }
@@ -57,6 +64,7 @@ Retrieve all weight entries.
   "weights": [
     {
       "id": 1,
+      "name": "John Doe",
       "date": "04-14-2026",
       "weight": 150.5,
       "created_at": "2026-04-14 12:00:00"
@@ -80,5 +88,5 @@ You can test the API using tools like curl, Postman, or the built-in FastAPI doc
 
 Example curl command:
 ```
-curl -X POST "http://localhost:8000/weights" -H "Content-Type: application/json" -d '{"date": "04-14-2026", "weight": 150.5}'
+curl -X POST "http://localhost:8000/weights" -H "Content-Type: application/json" -d '{"name": "John Doe", "date": "04-14-2026", "weight": 150.5}'
 ```

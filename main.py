@@ -1,16 +1,21 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, validator
 import re
 from database import init_db, insert_weight, get_all_weights
 
 app = FastAPI(title="Weight Tracker API", description="API for tracking weight over time", version="1.0.0")
 
+templates = Jinja2Templates(directory="templates")
+
 # Initialize the database on startup
-@app.on_event("startup")
-def startup_event():
-    init_db()
+@app.get("/")
+def home(request: Request):
+    """Serve the home page with a form to add weight."""
+    return templates.TemplateResponse("index.html", {"request": request})
 
 class WeightEntry(BaseModel):
+    name: str = Field(..., description="User name", min_length=1)
     date: str = Field(..., description="Date in mm-dd-yyyy format")
     weight: float = Field(..., description="Weight in pounds with one decimal place", ge=0)
 
@@ -40,8 +45,8 @@ class WeightEntry(BaseModel):
 def add_weight(entry: WeightEntry):
     """Add a new weight entry."""
     try:
-        insert_weight(entry.date, entry.weight)
-        return {"message": "Weight entry added successfully", "date": entry.date, "weight": entry.weight}
+        insert_weight(entry.name, entry.date, entry.weight)
+        return {"message": "Weight entry added successfully", "name": entry.name, "date": entry.date, "weight": entry.weight}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add weight: {str(e)}")
 
