@@ -3,42 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weight Tracker</title>
+    <title>Life Tracker</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         form { margin-bottom: 20px; }
         label { display: block; margin-top: 10px; }
-        input { width: 100%; padding: 8px; margin-top: 5px; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; }
         button { padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; margin-top: 10px; }
         button:hover { background-color: #0056b3; }
         .entries { margin-top: 20px; }
         .entry { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .section { margin-bottom: 40px; }
     </style>
 </head>
 <body>
-    <h1>Weight Tracker</h1>
-    <form action="/weights" method="post">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
+    <h1>Life Tracker</h1>
 
-        <label for="date">Date (mm-dd-yyyy):</label>
-        <input type="text" id="date" name="date" placeholder="04-14-2026" required>
+    <div class="section">
+        <h2>Weight Tracker</h2>
+        <form action="/weights" method="post">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
 
-        <label for="weight">Weight (lbs, one decimal):</label>
-        <input type="number" id="weight" name="weight" step="0.1" placeholder="150.5" required>
+            <label for="date">Date (mm-dd-yyyy):</label>
+            <input type="text" id="date" name="date" placeholder="04-14-2026" required>
 
-        <button type="submit">Add Weight</button>
-    </form>
+            <label for="weight">Weight (lbs, one decimal):</label>
+            <input type="number" id="weight" name="weight" step="0.1" placeholder="150.5" required>
 
-    <div class="entries">
-        <h2>Recent Entries</h2>
-        <div id="entries-list">
-            <!-- Entries will be loaded here -->
+            <button type="submit">Add Weight</button>
+        </form>
+
+        <div class="entries">
+            <h3>Recent Weight Entries</h3>
+            <div id="entries-list">
+                <!-- Weight entries will be loaded here -->
+            </div>
+            <button type="button" onclick="loadEntries()">Refresh Weight Entries</button>
         </div>
-        <button onclick="loadEntries()">Refresh Entries</button>
+    </div>
+
+    <div class="section">
+        <h2>Workout Tracker</h2>
+        <form action="/workouts" method="post">
+            <label for="workout_name">Name:</label>
+            <input type="text" id="workout_name" name="name" required>
+
+            <label for="workout_date">Date (mm-dd-yyyy):</label>
+            <input type="text" id="workout_date" name="date" placeholder="04-14-2026" required>
+
+            <label for="lift_split">Lift Split:</label>
+            <select id="lift_split" name="lift_split" required>
+                <option value="push">Push</option>
+                <option value="pull">Pull</option>
+                <option value="legs">Legs</option>
+                <option value="shoulders">Shoulders</option>
+                <option value="full_body">Full Body</option>
+                <option value="rest">Rest</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label for="cardio_done">Cardio Done?</label>
+            <select id="cardio_done" name="cardio_done" required>
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+
+            <label for="cardio_type">Cardio Type (running, biking, etc):</label>
+            <input type="text" id="cardio_type" name="cardio_type" placeholder="running">
+
+            <label for="cardio_distance_miles">Cardio Distance (miles):</label>
+            <input type="number" id="cardio_distance_miles" name="cardio_distance_miles" step="0.1" placeholder="2.5">
+
+            <label for="cardio_duration_minutes">Cardio Duration (minutes):</label>
+            <input type="number" id="cardio_duration_minutes" name="cardio_duration_minutes" step="1" placeholder="25">
+
+            <button type="submit">Add Workout</button>
+        </form>
+
+        <div class="entries">
+            <h3>Recent Workouts</h3>
+            <div id="workouts-list">
+                <!-- Workout entries will be loaded here -->
+            </div>
+            <button type="button" onclick="loadWorkouts()">Refresh Workouts</button>
+        </div>
     </div>
 
     <script>
+        function syncCardioFields() {
+            const cardioDone = document.getElementById('cardio_done').value === 'true';
+            const cardioType = document.getElementById('cardio_type');
+            const cardioDistance = document.getElementById('cardio_distance_miles');
+            const cardioDuration = document.getElementById('cardio_duration_minutes');
+
+            cardioType.required = cardioDone;
+            if (!cardioDone) {
+                cardioType.value = '';
+                cardioDistance.value = '';
+                cardioDuration.value = '';
+            }
+        }
+
         async function loadEntries() {
             try {
                 const response = await fetch('/weights');
@@ -55,8 +121,31 @@
             }
         }
 
-        // Load entries on page load
+        async function loadWorkouts() {
+            try {
+                const response = await fetch('/workouts');
+                const data = await response.json();
+                const workoutsDiv = document.getElementById('workouts-list');
+                workoutsDiv.innerHTML = data.workouts.map(workout => {
+                    const cardioSummary = workout.cardio_done
+                        ? `${workout.cardio_type || 'Cardio'} - ${workout.cardio_distance_miles ?? '?'} miles, ${workout.cardio_duration_minutes ?? '?'} min`
+                        : 'No cardio';
+                    return `<div class="entry">
+                        <strong>${workout.name}</strong> - ${workout.date}
+                        <br>Split: ${workout.lift_split}
+                        <br>Cardio: ${cardioSummary}
+                        <br><small>Added: ${workout.created_at}</small>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading workouts:', error);
+            }
+        }
+
+        document.getElementById('cardio_done').addEventListener('change', syncCardioFields);
+        syncCardioFields();
         loadEntries();
+        loadWorkouts();
     </script>
 </body>
 </html>

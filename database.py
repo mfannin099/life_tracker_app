@@ -38,3 +38,24 @@ def get_all_weights():
     rows = conn.execute('SELECT id, name, date, weight, created_at FROM weights ORDER BY date').fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def update_weight(entry_id: int, name: str, date: str, weight: float) -> bool:
+    """Update a weight entry. Returns True if a row was updated."""
+    conn = get_db_connection()
+    cursor = conn.execute(
+        'UPDATE weights SET name = ?, date = ?, weight = ? WHERE id = ?',
+        (name, date, weight, entry_id),
+    )
+    conn.commit()
+    updated = cursor.rowcount > 0
+    conn.close()
+    return updated
+
+def delete_weight(entry_id: int) -> bool:
+    """Delete a weight entry. Returns True if a row was deleted."""
+    conn = get_db_connection()
+    cursor = conn.execute('DELETE FROM weights WHERE id = ?', (entry_id,))
+    conn.commit()
+    deleted = cursor.rowcount > 0
+    conn.close()
+    return deleted
