@@ -1,14 +1,20 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationError, validator
 import re
+from urllib.parse import parse_qs
 from database import init_db, insert_weight, get_all_weights
 
 app = FastAPI(title="Weight Tracker API", description="API for tracking weight over time", version="1.0.0")
 
 templates = Jinja2Templates(directory="templates")
 
-# Initialize the database on startup
+@app.on_event("startup")
+def startup_event():
+    """Initialize the database when the app starts."""
+    init_db()
+
 @app.get("/")
 def home(request: Request):
     """Serve the home page with a form to add weight."""
@@ -42,11 +48,31 @@ class WeightEntry(BaseModel):
         return round(v, 1)  # Round to one decimal
 
 @app.post("/weights", response_model=dict)
-def add_weight(entry: WeightEntry):
-    """Add a new weight entry."""
+async def add_weight(request: Request):
+    """Add a new weight entry from either JSON or an HTML form."""
     try:
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            payload = await request.json()
+        else:
+            body = (await request.body()).decode("utf-8")
+            parsed = parse_qs(body)
+            payload = {key: values[-1] for key, values in parsed.items()}
+
+        entry = WeightEntry(**payload)
         insert_weight(entry.name, entry.date, entry.weight)
-        return {"message": "Weight entry added successfully", "name": entry.name, "date": entry.date, "weight": entry.weight}
+
+        if "text/html" in request.headers.get("accept", ""):
+            return RedirectResponse(url="/", status_code=303)
+
+        return {
+            "message": "Weight entry added successfully",
+            "name": entry.name,
+            "date": entry.date,
+            "weight": entry.weight,
+        }
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add weight: {str(e)}")
 
