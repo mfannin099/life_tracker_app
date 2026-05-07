@@ -17,7 +17,7 @@ from workouts_database import (
     update_workout,
 )
 
-app = FastAPI(title="Weight Tracker API", description="API for tracking weight over time", version="1.0.0")
+app = FastAPI(title="Life Tracker API", description="API for tracking weight and workouts over time", version="1.0.0")
 
 templates = Jinja2Templates(directory="templates")
 
@@ -111,6 +111,8 @@ async def parse_request_payload(request: Request) -> dict:
     if "application/json" in content_type:
         return await request.json()
 
+    # HTML forms send urlencoded data; normalize blanks to None so optional
+    # fields validate consistently with JSON payloads.
     body = (await request.body()).decode("utf-8")
     parsed = parse_qs(body, keep_blank_values=True)
     payload = {key: values[-1] for key, values in parsed.items()}
@@ -124,6 +126,7 @@ async def add_weight(request: Request):
         entry = WeightEntry(**payload)
         insert_weight(entry.name, entry.date, entry.weight)
 
+        # Browser form submissions should return to home instead of raw JSON.
         if "text/html" in request.headers.get("accept", ""):
             return RedirectResponse(url="/", status_code=303)
 
@@ -192,6 +195,7 @@ async def add_workout(request: Request):
             entry.cardio_duration_minutes,
         )
 
+        # Browser form submissions should return to home instead of raw JSON.
         if "text/html" in request.headers.get("accept", ""):
             return RedirectResponse(url="/", status_code=303)
 

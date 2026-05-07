@@ -1,92 +1,120 @@
-# Weight Tracker API
+# Life Tracker API
 
-A simple FastAPI application for tracking weight over time. Users can submit weight entries with a date, and the data is stored in a SQLite database.
+A FastAPI application for tracking:
+- Weight entries
+- Workout entries (lift split + cardio metadata)
+
+Data is persisted locally in SQLite databases under `data/`.
 
 ## Features
 
-- Submit weight entries via POST request or web UI
-- Retrieve all weight entries via GET request
-- Automatic validation of name, date format (mm-dd-yyyy) and weight (pounds with one decimal place)
-- SQLite database for data persistence
-- Simple web interface at the root URL
+- Web UI at `/` for adding and viewing entries
+- JSON API for weights and workouts
+- CRUD support for both resources
+- Request validation with Pydantic
+- Accepts both JSON and HTML form submissions for create routes
+
+## Tech Stack
+
+- FastAPI
+- Uvicorn
+- Jinja2 templates
+- SQLite (`sqlite3`)
 
 ## Installation
 
-1. Clone or download the repository.
+1. Clone or download this repository.
 2. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
 
-## Running the API
-
-Run the application with:
+```bash
+pip install -r requirements.txt
 ```
+
+## Run Locally
+
+Start the app:
+
+```bash
 uvicorn main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`.
+Open:
+- App UI: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
 
-## Web Interface
+## Project Structure
 
-Visit `http://localhost:8000` in your browser for a simple web form to add weight entries and view recent entries.
+- `main.py`: app setup, validation, API routes, template route
+- `database.py`: weights table init + CRUD
+- `workouts_database.py`: workouts table init + CRUD
+- `templates/index.html`: web UI
+- `data/weights.db`: weights database
+- `data/workouts.db`: workouts database
+- `scratch/test_api.py`: basic manual test script for weight endpoints
 
 ## API Endpoints
 
-### POST /weights
-Submit a new weight entry.
+### UI
+- `GET /` - render the Life Tracker page
 
-**Request Body:**
-```json
-{
-  "name": "John Doe",
-  "date": "04-14-2026",
-  "weight": 150.5
-}
+### Weights
+- `POST /weights` - create weight entry
+- `GET /weights` - list weight entries
+- `PUT /weights/{entry_id}` - update weight entry
+- `DELETE /weights/{entry_id}` - delete weight entry
+
+### Workouts
+- `POST /workouts` - create workout entry
+- `GET /workouts` - list workout entries
+- `PUT /workouts/{workout_id}` - update workout entry
+- `DELETE /workouts/{workout_id}` - delete workout entry
+
+## Example Requests
+
+Create weight entry:
+
+```bash
+curl -X POST "http://localhost:8000/weights" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"John Doe\",\"date\":\"04-14-2026\",\"weight\":150.5}"
 ```
 
-**Response:**
-```json
-{
-  "message": "Weight entry added successfully",
-  "name": "John Doe",
-  "date": "04-14-2026",
-  "weight": 150.5
-}
+Create workout entry:
+
+```bash
+curl -X POST "http://localhost:8000/workouts" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"John Doe\",\"date\":\"04-14-2026\",\"lift_split\":\"push\",\"cardio_done\":true,\"cardio_type\":\"running\",\"cardio_distance_miles\":2.5}"
 ```
 
-### GET /weights
-Retrieve all weight entries.
+## Validation Rules
 
-**Response:**
-```json
-{
-  "weights": [
-    {
-      "id": 1,
-      "name": "John Doe",
-      "date": "04-14-2026",
-      "weight": 150.5,
-      "created_at": "2026-04-14 12:00:00"
-    }
-  ]
-}
-```
+### Shared
+- `date` must be in `mm-dd-yyyy` format and represent a valid date
+- `name` must be non-empty
 
-## Validation
+### WeightEntry
+- `weight` must be `>= 0`
+- `weight` allows at most one decimal place
 
-- **Date**: Must be in `mm-dd-yyyy` format and a valid date.
-- **Weight**: Must be a positive number with at most one decimal place (e.g., 150.5).
+### WorkoutEntry
+- `lift_split` must be one of: `push`, `pull`, `legs`, `shoulders`, `full_body`, `rest`, `other`
+- If `cardio_done` is `false`, cardio fields are cleared
+- If `cardio_done` is `true`:
+  - `cardio_type` is required
+  - at least one of `cardio_distance_miles` or `cardio_duration_minutes` is required
 
-## Database
+## Database Notes
 
-Data is stored in `data/weights.db`. The database is automatically created on first run.
+- Databases are created automatically on startup.
+- Weight data is stored in `data/weights.db`.
+- Workout data is stored in `data/workouts.db`.
+- Dates are currently stored as text (`mm-dd-yyyy`), which affects SQL sort behavior.
 
 ## Testing
 
-You can test the API using tools like curl, Postman, or the built-in FastAPI docs at `http://localhost:8000/docs`.
+Use:
+- FastAPI docs at `http://localhost:8000/docs`
+- `curl`/Postman
+- `scratch/test_api.py` (weight endpoint smoke test)
 
-Example curl command:
-```
-curl -X POST "http://localhost:8000/weights" -H "Content-Type: application/json" -d '{"name": "John Doe", "date": "04-14-2026", "weight": 150.5}'
-```

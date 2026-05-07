@@ -35,6 +35,7 @@ def insert_weight(name: str, date: str, weight: float):
 def get_all_weights():
     """Retrieve all weight entries from the database."""
     conn = get_db_connection()
+    # Date is stored as mm-dd-yyyy text, so ordering is lexicographic.
     rows = conn.execute('SELECT id, name, date, weight, created_at FROM weights ORDER BY date').fetchall()
     conn.close()
     return [dict(row) for row in rows]

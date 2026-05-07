@@ -89,6 +89,7 @@ def get_all_workouts():
     workouts = []
     for row in rows:
         item = dict(row)
+        # SQLite stores booleans as integers; convert for API/UI consistency.
         item["cardio_done"] = bool(item["cardio_done"])
         workouts.append(item)
     return workouts
