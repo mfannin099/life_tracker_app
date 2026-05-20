@@ -24,6 +24,11 @@ type Workout = {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+function toSortableDate(value: string): number {
+  const [month, day, year] = value.split("-").map(Number);
+  return new Date(year, month - 1, day).getTime();
+}
+
 function App() {
   const [weights, setWeights] = useState<Weight[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -108,6 +113,14 @@ function App() {
     void loadWorkouts();
   }, []);
 
+  const recentWeights = [...weights]
+    .sort((a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id)
+    .slice(0, 5);
+
+  const recentWorkouts = [...workouts]
+    .sort((a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id)
+    .slice(0, 5);
+
   return (
     <main>
       <h1>Life Tracker Application</h1>
@@ -125,7 +138,7 @@ function App() {
           </form>
 
           <h3>Recent Weight Entries</h3>
-          {weights.map((entry) => (
+          {recentWeights.map((entry) => (
             <div className="entry" key={entry.id}>
               <strong>{entry.name}</strong> - {entry.date}: {entry.weight} lbs
               <button
@@ -176,7 +189,7 @@ function App() {
           </form>
 
           <h3>Recent Workouts</h3>
-          {workouts.map((workout) => (
+          {recentWorkouts.map((workout) => (
             <div className="entry" key={workout.id}>
               <strong>{workout.name}</strong> - {workout.date}
               <br />
