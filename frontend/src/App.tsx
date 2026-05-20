@@ -121,9 +121,31 @@ function App() {
     .sort((a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id)
     .slice(0, 5);
 
+  const latestWeight = recentWeights[0]?.weight ?? null;
+  const latestWorkoutSplit = recentWorkouts[0]?.lift_split ?? null;
+
   return (
     <main>
-      <h1>Life Tracker Application</h1>
+      <header className="page-header">
+        <h1>Life Tracker</h1>
+        <p>Track your weight and workouts with a cleaner daily flow.</p>
+      </header>
+
+      <section className="summary-grid">
+        <article className="summary-card">
+          <span>Latest Weight</span>
+          <strong>{latestWeight !== null ? `${latestWeight} lbs` : "--"}</strong>
+        </article>
+        <article className="summary-card">
+          <span>Recent Workouts</span>
+          <strong>{recentWorkouts.length}</strong>
+        </article>
+        <article className="summary-card">
+          <span>Last Split</span>
+          <strong>{latestWorkoutSplit ?? "--"}</strong>
+        </article>
+      </section>
+
       <div className="layout">
         <section className="section">
           <h2>Weight Tracker</h2>
@@ -140,7 +162,11 @@ function App() {
           <h3>Recent Weight Entries</h3>
           {recentWeights.map((entry) => (
             <div className="entry" key={entry.id}>
-              <strong>{entry.name}</strong> - {entry.date}: {entry.weight} lbs
+              <div className="entry-top">
+                <strong>{entry.name}</strong>
+                <span>{entry.date}</span>
+              </div>
+              <p>{entry.weight} lbs</p>
               <button
                 type="button"
                 className="danger"
@@ -191,10 +217,14 @@ function App() {
           <h3>Recent Workouts</h3>
           {recentWorkouts.map((workout) => (
             <div className="entry" key={workout.id}>
-              <strong>{workout.name}</strong> - {workout.date}
-              <br />
-              Split: {workout.lift_split}
-              {workout.secondary_muscle_group ? ` (${workout.secondary_muscle_group})` : ""}
+              <div className="entry-top">
+                <strong>{workout.name}</strong>
+                <span>{workout.date}</span>
+              </div>
+              <p>
+                {workout.lift_split}
+                {workout.secondary_muscle_group ? ` / ${workout.secondary_muscle_group}` : ""}
+              </p>
               <button
                 type="button"
                 className="danger"
