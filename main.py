@@ -4,6 +4,7 @@ from typing import Literal, Self
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
@@ -20,6 +21,17 @@ from workouts_database import (
 app = FastAPI(title="Life Tracker API", description="API for tracking weight and workouts over time", version="1.0.0")
 
 templates = Jinja2Templates(directory="templates")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def normalize_mmddyyyy_date(value: str) -> str:
@@ -72,7 +84,8 @@ class WeightEntry(BaseModel):
 class WorkoutEntry(BaseModel):
     name: str = Field(..., description="User name", min_length=1)
     date: str = Field(..., description="Date in mm-dd-yyyy format")
-    lift_split: Literal["push", "pull", "legs", "shoulders", "full_body", "rest", "other"]
+    lift_split: Literal["push", "pull", "legs", "shoulders", "arms", "full_body", "rest", "other"]
+    secondary_muscle_group: str | None = Field(default=None, description="Optional secondary muscle group")
     cardio_done: bool = Field(..., description="Whether cardio was performed")
     cardio_type: str | None = Field(default=None, description="e.g. running, cycling")
     cardio_distance_miles: float | None = Field(default=None, ge=0)
@@ -86,6 +99,14 @@ class WorkoutEntry(BaseModel):
     @field_validator("cardio_type")
     @classmethod
     def normalize_cardio_type(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        text = v.strip()
+        return text if text else None
+
+    @field_validator("secondary_muscle_group")
+    @classmethod
+    def normalize_secondary_muscle_group(cls, v: str | None) -> str | None:
         if v is None:
             return None
         text = v.strip()
@@ -193,6 +214,7 @@ async def add_workout(request: Request):
             entry.name,
             entry.date,
             entry.lift_split,
+            entry.secondary_muscle_group,
             entry.cardio_done,
             entry.cardio_type,
             entry.cardio_distance_miles,
@@ -208,6 +230,7 @@ async def add_workout(request: Request):
             "name": entry.name,
             "date": entry.date,
             "lift_split": entry.lift_split,
+            "secondary_muscle_group": entry.secondary_muscle_group,
             "cardio_done": entry.cardio_done,
         }
     except ValidationError as e:
@@ -235,6 +258,7 @@ def edit_workout(workout_id: int, entry: WorkoutEntry):
             entry.name,
             entry.date,
             entry.lift_split,
+            entry.secondary_muscle_group,
             entry.cardio_done,
             entry.cardio_type,
             entry.cardio_distance_miles,

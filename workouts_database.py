@@ -22,6 +22,7 @@ def init_workouts_db():
             name TEXT NOT NULL,
             date TEXT NOT NULL,
             lift_split TEXT NOT NULL,
+            secondary_muscle_group TEXT,
             cardio_done INTEGER NOT NULL,
             cardio_type TEXT,
             cardio_distance_miles REAL,
@@ -30,6 +31,12 @@ def init_workouts_db():
         )
         '''
     )
+    # Lightweight migration for existing databases created before
+    # secondary_muscle_group existed.
+    columns = conn.execute("PRAGMA table_info(workouts)").fetchall()
+    column_names = {row["name"] for row in columns}
+    if "secondary_muscle_group" not in column_names:
+        conn.execute("ALTER TABLE workouts ADD COLUMN secondary_muscle_group TEXT")
     conn.commit()
     conn.close()
 
@@ -38,6 +45,7 @@ def insert_workout(
     name: str,
     date: str,
     lift_split: str,
+    secondary_muscle_group: str | None,
     cardio_done: bool,
     cardio_type: str | None,
     cardio_distance_miles: float | None,
@@ -48,13 +56,14 @@ def insert_workout(
     conn.execute(
         '''
         INSERT INTO workouts (
-            name, date, lift_split, cardio_done, cardio_type, cardio_distance_miles, cardio_duration_minutes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            name, date, lift_split, secondary_muscle_group, cardio_done, cardio_type, cardio_distance_miles, cardio_duration_minutes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         (
             name,
             date,
             lift_split,
+            secondary_muscle_group,
             int(cardio_done),
             cardio_type,
             cardio_distance_miles,
@@ -75,6 +84,7 @@ def get_all_workouts():
             name,
             date,
             lift_split,
+            secondary_muscle_group,
             cardio_done,
             cardio_type,
             cardio_distance_miles,
@@ -100,6 +110,7 @@ def update_workout(
     name: str,
     date: str,
     lift_split: str,
+    secondary_muscle_group: str | None,
     cardio_done: bool,
     cardio_type: str | None,
     cardio_distance_miles: float | None,
@@ -114,6 +125,7 @@ def update_workout(
             name = ?,
             date = ?,
             lift_split = ?,
+            secondary_muscle_group = ?,
             cardio_done = ?,
             cardio_type = ?,
             cardio_distance_miles = ?,
@@ -124,6 +136,7 @@ def update_workout(
             name,
             date,
             lift_split,
+            secondary_muscle_group,
             int(cardio_done),
             cardio_type,
             cardio_distance_miles,
