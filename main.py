@@ -21,6 +21,22 @@ app = FastAPI(title="Life Tracker API", description="API for tracking weight and
 
 templates = Jinja2Templates(directory="templates")
 
+
+def normalize_mmddyyyy_date(value: str) -> str:
+    """Accept m-d-yyyy or mm-dd-yyyy and normalize to mm-dd-yyyy."""
+    text = value.strip()
+    match = re.match(r"^(\d{1,2})-(\d{1,2})-(\d{4})$", text)
+    if not match:
+        raise ValueError("Date must be in mm-dd-yyyy format")
+
+    month, day, year = match.groups()
+    normalized = f"{int(month):02d}-{int(day):02d}-{year}"
+    try:
+        datetime.strptime(normalized, "%m-%d-%Y")
+    except ValueError:
+        raise ValueError("Invalid date")
+    return normalized
+
 @app.on_event("startup")
 def startup_event():
     """Initialize databases when the app starts."""
@@ -40,13 +56,7 @@ class WeightEntry(BaseModel):
     @field_validator("date")
     @classmethod
     def validate_date(cls, v: str) -> str:
-        if not re.match(r'^\d{2}-\d{2}-\d{4}$', v):
-            raise ValueError('Date must be in mm-dd-yyyy format')
-        try:
-            datetime.strptime(v, '%m-%d-%Y')
-        except ValueError:
-            raise ValueError('Invalid date')
-        return v
+        return normalize_mmddyyyy_date(v)
 
     @field_validator("weight")
     @classmethod
@@ -71,13 +81,7 @@ class WorkoutEntry(BaseModel):
     @field_validator("date")
     @classmethod
     def validate_date(cls, v: str) -> str:
-        if not re.match(r'^\d{2}-\d{2}-\d{4}$', v):
-            raise ValueError('Date must be in mm-dd-yyyy format')
-        try:
-            datetime.strptime(v, '%m-%d-%Y')
-        except ValueError:
-            raise ValueError('Invalid date')
-        return v
+        return normalize_mmddyyyy_date(v)
 
     @field_validator("cardio_type")
     @classmethod
