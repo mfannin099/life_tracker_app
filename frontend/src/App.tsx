@@ -29,8 +29,13 @@ function toSortableDate(value: string): number {
   return new Date(year, month - 1, day).getTime();
 }
 
+function toDate(value: string): Date {
+  const [month, day, year] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 function App() {
-  const [view, setView] = useState<"dashboard" | "all_weights">("dashboard");
+  const [view, setView] = useState<"dashboard" | "all_weights" | "all_workouts">("dashboard");
   const [weights, setWeights] = useState<Weight[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weightError, setWeightError] = useState("");
@@ -138,9 +143,18 @@ function App() {
   const allWeights = [...weights].sort(
     (a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id,
   );
+  const allWorkouts = [...workouts].sort(
+    (a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id,
+  );
 
   const latestWeight = recentWeights[0]?.weight ?? null;
   const latestWorkoutSplit = recentWorkouts[0]?.lift_split ?? null;
+  const now = new Date();
+  const lastWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+  const workoutsLastWeek = workouts.filter((w) => {
+    const workoutDate = toDate(w.date);
+    return workoutDate >= lastWeekStart && workoutDate <= now;
+  }).length;
 
   if (view === "all_weights") {
     return (
@@ -180,6 +194,52 @@ function App() {
     );
   }
 
+  if (view === "all_workouts") {
+    return (
+      <main>
+        <header className="page-header">
+          <h1>All Workout Entries</h1>
+          <p>Complete history of recorded workouts.</p>
+        </header>
+        <section className="section">
+          <button type="button" className="ghost" onClick={() => setView("dashboard")}>
+            Back to Dashboard
+          </button>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Date</th>
+                  <th>Lift Split</th>
+                  <th>Secondary</th>
+                  <th>Cardio</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allWorkouts.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{entry.name}</td>
+                    <td>{entry.date}</td>
+                    <td>{entry.lift_split}</td>
+                    <td>{entry.secondary_muscle_group ?? "-"}</td>
+                    <td>
+                      {entry.cardio_done
+                        ? `${entry.cardio_type ?? "cardio"} (${entry.cardio_distance_miles ?? "-"} mi / ${entry.cardio_duration_minutes ?? "-"} min)`
+                        : "No"}
+                    </td>
+                    <td>{entry.created_at}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main>
       <header className="page-header">
@@ -193,8 +253,8 @@ function App() {
           <strong>{latestWeight !== null ? `${latestWeight} lbs` : "--"}</strong>
         </article>
         <article className="summary-card">
-          <span>Recent Workouts</span>
-          <strong>{recentWorkouts.length}</strong>
+          <span>Workouts Last 7 Days</span>
+          <strong>{workoutsLastWeek}</strong>
         </article>
         <article className="summary-card">
           <span>Last Split</span>
@@ -242,6 +302,9 @@ function App() {
 
         <section className="section">
           <h2>Workout Tracker</h2>
+          <button type="button" className="ghost" onClick={() => setView("all_workouts")}>
+            View All Workouts Table
+          </button>
           <form onSubmit={onWorkoutSubmit}>
             <label>Name</label>
             <input value={workoutForm.name} onChange={(e) => setWorkoutForm({ ...workoutForm, name: e.target.value })} required />
