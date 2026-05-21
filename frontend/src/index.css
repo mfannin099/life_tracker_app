@@ -170,6 +170,63 @@ button:hover {
   transform: none;
 }
 
+.error-text {
+  margin: 10px 0 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.ghost {
+  background: #ffffff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  box-shadow: none;
+}
+
+.ghost:hover {
+  background: #eff6ff;
+  transform: none;
+  box-shadow: none;
+}
+
+.table-wrap {
+  margin-top: 14px;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table th {
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
 @media (max-width: 900px) {
   #root {
     padding-top: 22px;

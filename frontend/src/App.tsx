@@ -30,8 +30,11 @@ function toSortableDate(value: string): number {
 }
 
 function App() {
+  const [view, setView] = useState<"dashboard" | "all_weights">("dashboard");
   const [weights, setWeights] = useState<Weight[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [weightError, setWeightError] = useState("");
+  const [workoutError, setWorkoutError] = useState("");
 
   const [weightForm, setWeightForm] = useState({ name: "", date: "", weight: "" });
   const [workoutForm, setWorkoutForm] = useState({
@@ -59,7 +62,8 @@ function App() {
 
   async function onWeightSubmit(e: FormEvent) {
     e.preventDefault();
-    await fetch(`${API_BASE}/weights`, {
+    setWeightError("");
+    const response = await fetch(`${API_BASE}/weights`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -68,6 +72,11 @@ function App() {
         weight: Number(weightForm.weight),
       }),
     });
+    if (!response.ok) {
+      const text = await response.text();
+      setWeightError(`Failed to add weight (${response.status}): ${text}`);
+      return;
+    }
     await loadWeights();
   }
 
@@ -78,9 +87,10 @@ function App() {
 
   async function onWorkoutSubmit(e: FormEvent) {
     e.preventDefault();
+    setWorkoutError("");
     const cardioDone = workoutForm.cardio_done === "true";
 
-    await fetch(`${API_BASE}/workouts`, {
+    const response = await fetch(`${API_BASE}/workouts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -100,6 +110,11 @@ function App() {
             : null,
       }),
     });
+    if (!response.ok) {
+      const text = await response.text();
+      setWorkoutError(`Failed to add workout (${response.status}): ${text}`);
+      return;
+    }
     await loadWorkouts();
   }
 
@@ -120,9 +135,50 @@ function App() {
   const recentWorkouts = [...workouts]
     .sort((a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id)
     .slice(0, 5);
+  const allWeights = [...weights].sort(
+    (a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id,
+  );
 
   const latestWeight = recentWeights[0]?.weight ?? null;
   const latestWorkoutSplit = recentWorkouts[0]?.lift_split ?? null;
+
+  if (view === "all_weights") {
+    return (
+      <main>
+        <header className="page-header">
+          <h1>All Weight Entries</h1>
+          <p>Complete history of recorded weights.</p>
+        </header>
+        <section className="section">
+          <button type="button" className="ghost" onClick={() => setView("dashboard")}>
+            Back to Dashboard
+          </button>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Date</th>
+                  <th>Weight (lbs)</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allWeights.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{entry.name}</td>
+                    <td>{entry.date}</td>
+                    <td>{entry.weight}</td>
+                    <td>{entry.created_at}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -149,6 +205,9 @@ function App() {
       <div className="layout">
         <section className="section">
           <h2>Weight Tracker</h2>
+          <button type="button" className="ghost" onClick={() => setView("all_weights")}>
+            View All Weights Table
+          </button>
           <form onSubmit={onWeightSubmit}>
             <label>Name</label>
             <input value={weightForm.name} onChange={(e) => setWeightForm({ ...weightForm, name: e.target.value })} required />
@@ -158,6 +217,7 @@ function App() {
             <input type="number" step="0.1" value={weightForm.weight} onChange={(e) => setWeightForm({ ...weightForm, weight: e.target.value })} required />
             <button type="submit">Add Weight</button>
           </form>
+          {weightError ? <p className="error-text">{weightError}</p> : null}
 
           <h3>Recent Weight Entries</h3>
           {recentWeights.map((entry) => (
@@ -213,6 +273,7 @@ function App() {
             <input type="number" value={workoutForm.cardio_duration_minutes} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_duration_minutes: e.target.value })} />
             <button type="submit">Add Workout</button>
           </form>
+          {workoutError ? <p className="error-text">{workoutError}</p> : null}
 
           <h3>Recent Workouts</h3>
           {recentWorkouts.map((workout) => (
