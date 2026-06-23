@@ -131,6 +131,19 @@ button:hover {
   filter: saturate(1.06);
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
 .entry {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -192,6 +205,12 @@ button:hover {
   background: #eff6ff;
   transform: none;
   box-shadow: none;
+}
+
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8fafc;
 }
 
 .table-wrap {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 type Weight = {
   id: number;
@@ -48,6 +49,7 @@ function App() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weightError, setWeightError] = useState("");
   const [workoutError, setWorkoutError] = useState("");
+  const [weightsPage, setWeightsPage] = useState(0);
 
   const [weightForm, setWeightForm] = useState({ name: "", date: todayDateString(), weight: "" });
   const [workoutForm, setWorkoutForm] = useState({
@@ -65,6 +67,7 @@ function App() {
     const response = await fetch(`${API_BASE}/weights`);
     const data = await response.json();
     setWeights(data.weights ?? []);
+    setWeightsPage(0);
   }
 
   async function loadWorkouts() {
@@ -165,6 +168,29 @@ function App() {
   }).length;
 
   if (view === "all_weights") {
+    const itemsPerPage = 15;
+    const totalPages = Math.ceil(allWeights.length / itemsPerPage);
+    const paginatedWeights = allWeights.slice(weightsPage * itemsPerPage, (weightsPage + 1) * itemsPerPage);
+    
+    // Prepare chart data grouped by user
+    const dateToUserWeights: Record<string, Record<string, number>> = {};
+    [...allWeights].reverse().forEach((entry) => {
+      if (!dateToUserWeights[entry.date]) {
+        dateToUserWeights[entry.date] = {};
+      }
+      dateToUserWeights[entry.date][entry.name] = entry.weight;
+    });
+    
+    const chartData = Object.entries(dateToUserWeights).map(([date, userWeights]) => ({
+      date,
+      ...userWeights,
+    }));
+    
+    // Get unique user names
+    const userNames = Array.from(new Set(allWeights.map((w) => w.name)));
+    const colors = ["#0891b2", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#16a34a"];
+
+
     return (
       <main>
         <header className="page-header">
@@ -175,6 +201,29 @@ function App() {
           <button type="button" className="ghost" onClick={() => setView("dashboard")}>
             Back to Dashboard
           </button>
+
+          <div style={{ marginTop: "20px", marginBottom: "30px" }}>
+            <h3 style={{ marginTop: 0 }}>Weight Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {userNames.map((userName, idx) => (
+                  <Line
+                    key={userName}
+                    type="monotone"
+                    dataKey={userName}
+                    stroke={colors[idx % colors.length]}
+                    name={userName}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -186,7 +235,7 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {allWeights.map((entry) => (
+                {paginatedWeights.map((entry) => (
                   <tr key={entry.id}>
                     <td>{entry.name}</td>
                     <td>{entry.date}</td>
@@ -196,6 +245,28 @@ function App() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div style={{ marginTop: "20px", display: "flex", gap: "10px", justifyContent: "center", alignItems: "center" }}>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setWeightsPage(Math.max(0, weightsPage - 1))}
+              disabled={weightsPage === 0}
+            >
+              ← Previous
+            </button>
+            <span style={{ margin: "0 10px", fontSize: "0.9rem" }}>
+              Page {weightsPage + 1} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setWeightsPage(Math.min(totalPages - 1, weightsPage + 1))}
+              disabled={weightsPage >= totalPages - 1}
+            >
+              Next →
+            </button>
           </div>
         </section>
       </main>
