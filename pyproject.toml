@@ -1,0 +1,10 @@
+[project]
+name = "life-tracker-app"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi==0.104.1",
+    "jinja2==3.1.2",
+    "uvicorn[standard]==0.24.0",
+]
