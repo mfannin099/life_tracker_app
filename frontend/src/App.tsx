@@ -34,6 +34,14 @@ function toDate(value: string): Date {
   return new Date(year, month - 1, day);
 }
 
+function todayDateString(): string {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const year = String(today.getFullYear());
+  return `${month}-${day}-${year}`;
+}
+
 function App() {
   const [view, setView] = useState<"dashboard" | "all_weights" | "all_workouts">("dashboard");
   const [weights, setWeights] = useState<Weight[]>([]);
@@ -41,10 +49,10 @@ function App() {
   const [weightError, setWeightError] = useState("");
   const [workoutError, setWorkoutError] = useState("");
 
-  const [weightForm, setWeightForm] = useState({ name: "", date: "", weight: "" });
+  const [weightForm, setWeightForm] = useState({ name: "", date: todayDateString(), weight: "" });
   const [workoutForm, setWorkoutForm] = useState({
     name: "",
-    date: "",
+    date: todayDateString(),
     lift_split: "push",
     secondary_muscle_group: "",
     cardio_done: "false",
