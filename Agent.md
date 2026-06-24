@@ -158,7 +158,7 @@ pip install -r requirements.txt
 
 2. Run server:
 ```bash
-uvicorn main:app --reload
+uv run uvicorn main:app --reload
 ```
 
 3. Open:
@@ -169,7 +169,7 @@ uvicorn main:app --reload
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev -- --host 0.0.0.0
 ```
 
 5. Open React UI:
