@@ -234,13 +234,29 @@ function App() {
 
           <div style={{ marginTop: "20px", marginBottom: "30px" }}>
             <h3 style={{ marginTop: 0 }}>Weight Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 13 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  domain={['dataMin - 5', 'dataMax + 5']}
+                  tick={{ fontSize: 12 }}
+                  label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft' }}
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px' }}
+                  formatter={(value) => value != null ? value.toFixed(1) : '-'}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="line"
+                />
                 {userNames.map((userName, idx) => (
                   <Line
                     key={userName}
@@ -250,6 +266,7 @@ function App() {
                     name={userName}
                     connectNulls={true}
                     dot={false}
+                    strokeWidth={2}
                   />
                 ))}
                 {/* 7-day moving average (orange line) */}
