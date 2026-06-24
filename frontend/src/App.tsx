@@ -408,7 +408,13 @@ function App() {
               <option value="true">Yes</option>
             </select>
             <label>Cardio Type</label>
-            <input value={workoutForm.cardio_type} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_type: e.target.value })} />
+            <select value={workoutForm.cardio_type} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_type: e.target.value })}>
+              <option value="">Select</option>
+              <option value="running">Running</option>
+              <option value="biking">Biking</option>
+              <option value="swimming">Swimming</option>
+              <option value="sports">Sports</option>
+            </select>
             <label>Cardio Distance (miles)</label>
             <input type="number" step="0.1" value={workoutForm.cardio_distance_miles} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_distance_miles: e.target.value })} />
             <label>Cardio Duration (minutes)</label>
