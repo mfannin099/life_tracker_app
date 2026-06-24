@@ -190,9 +190,35 @@ function App() {
     // Ensure chart data is in chronological order so lines connect correctly
     chartData.sort((a, b) => toSortableDate(a.date) - toSortableDate(b.date));
     
-    // Get unique user names
+    // Get unique user names BEFORE using them in calculations
     const userNames = Array.from(new Set(allWeights.map((w) => w.name)));
     const colors = ["#0891b2", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#16a34a"];
+
+    // Compute per-date average weight and 7-day moving average
+    try {
+      for (let i = 0; i < chartData.length; i++) {
+        const row = chartData[i];
+        // Calculate average of all user weights on this date
+        const vals = userNames
+          .map((n) => row[n])
+          .filter((v) => typeof v === 'number' && !isNaN(v)) as number[];
+        row.avg = vals.length > 0 ? vals.reduce((s, x) => s + x, 0) / vals.length : null;
+      }
+
+      // Compute 7-day moving average (or fewer days if less data exists)
+      const windowSize = 7;
+      for (let i = 0; i < chartData.length; i++) {
+        const start = Math.max(0, i - (windowSize - 1));
+        const slice = chartData
+          .slice(start, i + 1)
+          .map((r) => r.avg)
+          .filter((v) => v != null) as number[];
+        chartData[i].moving_avg = slice.length > 0 ? slice.reduce((s, x) => s + x, 0) / slice.length : null;
+      }
+    } catch (err) {
+      console.warn('Error computing moving average:', err);
+      // Gracefully continue without moving average if calculation fails
+    }
 
 
     return (
@@ -226,6 +252,16 @@ function App() {
                     dot={false}
                   />
                 ))}
+                {/* 7-day moving average (orange line) */}
+                <Line
+                  type="monotone"
+                  dataKey="moving_avg"
+                  stroke="#fb923c"
+                  name="7-day avg"
+                  strokeWidth={3}
+                  dot={false}
+                  connectNulls={true}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
