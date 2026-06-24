@@ -407,7 +407,19 @@ function App() {
               <option value="other">Other</option>
             </select>
             <label>Secondary Muscle Group</label>
-            <input value={workoutForm.secondary_muscle_group} onChange={(e) => setWorkoutForm({ ...workoutForm, secondary_muscle_group: e.target.value })} />
+            <select value={workoutForm.secondary_muscle_group ?? ""} onChange={(e) => setWorkoutForm({ ...workoutForm, secondary_muscle_group: e.target.value })}>
+              <option value="">None</option>
+              <option value="push">Push</option>
+              <option value="pull">Pull</option>
+              <option value="legs">Legs</option>
+              <option value="shoulders">Shoulders</option>
+              <option value="arms">Arms</option>
+              <option value="full_body">Full Body</option>
+              <option value="rest">Rest</option>
+              <option value="other">Other</option>
+              <option value="biceps">Biceps</option>
+              <option value="triceps">Triceps</option>
+            </select>
             <label>Cardio Done?</label>
             <select value={workoutForm.cardio_done} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_done: e.target.value })}>
               <option value="false">No</option>
