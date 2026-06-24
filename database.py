@@ -27,6 +27,8 @@ def init_db():
 
 def insert_weight(name: str, date: str, weight: float):
     """Insert a new weight entry into the database."""
+    # Normalize name to avoid accidental duplicates like trailing spaces
+    name = (name or "").strip()
     conn = get_db_connection()
     conn.execute('INSERT INTO weights (name, date, weight) VALUES (?, ?, ?)', (name, date, weight))
     conn.commit()
@@ -42,6 +44,8 @@ def get_all_weights():
 
 def update_weight(entry_id: int, name: str, date: str, weight: float) -> bool:
     """Update a weight entry. Returns True if a row was updated."""
+    # Normalize name to avoid accidental duplicates like trailing spaces
+    name = (name or "").strip()
     conn = get_db_connection()
     cursor = conn.execute(
         'UPDATE weights SET name = ?, date = ?, weight = ? WHERE id = ?',

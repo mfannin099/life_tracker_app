@@ -66,14 +66,16 @@ function App() {
   async function loadWeights() {
     const response = await fetch(`${API_BASE}/weights`);
     const data = await response.json();
-    setWeights(data.weights ?? []);
+    const normalized = (data.weights ?? []).map((w: Weight) => ({ ...w, name: (w.name ?? "").trim() }));
+    setWeights(normalized);
     setWeightsPage(0);
   }
 
   async function loadWorkouts() {
     const response = await fetch(`${API_BASE}/workouts`);
     const data = await response.json();
-    setWorkouts(data.workouts ?? []);
+    const normalized = (data.workouts ?? []).map((w: Workout) => ({ ...w, name: (w.name ?? "").trim() }));
+    setWorkouts(normalized);
   }
 
   async function onWeightSubmit(e: FormEvent) {
@@ -185,6 +187,8 @@ function App() {
       date,
       ...userWeights,
     }));
+    // Ensure chart data is in chronological order so lines connect correctly
+    chartData.sort((a, b) => toSortableDate(a.date) - toSortableDate(b.date));
     
     // Get unique user names
     const userNames = Array.from(new Set(allWeights.map((w) => w.name)));
@@ -218,6 +222,8 @@ function App() {
                     dataKey={userName}
                     stroke={colors[idx % colors.length]}
                     name={userName}
+                    connectNulls={true}
+                    dot={false}
                   />
                 ))}
               </LineChart>

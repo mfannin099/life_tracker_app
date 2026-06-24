@@ -65,6 +65,13 @@ class WeightEntry(BaseModel):
     date: str = Field(..., description="Date in mm-dd-yyyy format")
     weight: float = Field(..., description="Weight in pounds with one decimal place", ge=0)
 
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: str) -> str:
+        if v is None:
+            return v
+        return v.strip()
+
     @field_validator("date")
     @classmethod
     def validate_date(cls, v: str) -> str:
@@ -111,6 +118,13 @@ class WorkoutEntry(BaseModel):
             return None
         text = v.strip()
         return text if text else None
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: str) -> str:
+        if v is None:
+            return v
+        return v.strip()
 
     @model_validator(mode="after")
     def validate_cardio_fields(self) -> Self:

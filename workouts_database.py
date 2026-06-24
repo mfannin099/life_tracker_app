@@ -52,6 +52,13 @@ def insert_workout(
     cardio_duration_minutes: int | None,
 ):
     """Insert a workout entry."""
+    # Normalize text fields to avoid duplicates with extra whitespace
+    name = (name or "").strip()
+    if secondary_muscle_group is not None:
+        secondary_muscle_group = secondary_muscle_group.strip() or None
+    if cardio_type is not None:
+        cardio_type = cardio_type.strip() or None
+
     conn = get_db_connection()
     conn.execute(
         '''
@@ -117,6 +124,13 @@ def update_workout(
     cardio_duration_minutes: int | None,
 ) -> bool:
     """Update a workout entry. Returns True if a row was updated."""
+    # Normalize text fields to avoid duplicates with extra whitespace
+    name = (name or "").strip()
+    if secondary_muscle_group is not None:
+        secondary_muscle_group = secondary_muscle_group.strip() or None
+    if cardio_type is not None:
+        cardio_type = cardio_type.strip() or None
+
     conn = get_db_connection()
     cursor = conn.execute(
         '''
