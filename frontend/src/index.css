@@ -194,6 +194,30 @@ button:disabled:hover {
   white-space: pre-wrap;
 }
 
+.success-text {
+  margin: 10px 0 0;
+  color: #15803d;
+  font-size: 0.9rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+  animation: fadeOut 3s ease-in forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .ghost {
   background: #ffffff;
   color: #1d4ed8;

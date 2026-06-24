@@ -49,10 +49,12 @@ function App() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weightError, setWeightError] = useState("");
   const [workoutError, setWorkoutError] = useState("");
+  const [weightSuccess, setWeightSuccess] = useState("");
+  const [workoutSuccess, setWorkoutSuccess] = useState("");
   const [weightsPage, setWeightsPage] = useState(0);
 
-  const [weightForm, setWeightForm] = useState({ name: "", date: todayDateString(), weight: "" });
-  const [workoutForm, setWorkoutForm] = useState({
+  const resetWeightForm = () => ({ name: "", date: todayDateString(), weight: "" });
+  const resetWorkoutForm = () => ({
     name: "",
     date: todayDateString(),
     lift_split: "push",
@@ -62,6 +64,9 @@ function App() {
     cardio_distance_miles: "",
     cardio_duration_minutes: "",
   });
+
+  const [weightForm, setWeightForm] = useState(resetWeightForm());
+  const [workoutForm, setWorkoutForm] = useState(resetWorkoutForm());
 
   async function loadWeights() {
     const response = await fetch(`${API_BASE}/weights`);
@@ -81,6 +86,7 @@ function App() {
   async function onWeightSubmit(e: FormEvent) {
     e.preventDefault();
     setWeightError("");
+    setWeightSuccess("");
     const response = await fetch(`${API_BASE}/weights`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -95,6 +101,8 @@ function App() {
       setWeightError(`Failed to add weight (${response.status}): ${text}`);
       return;
     }
+    setWeightSuccess(`✓ Weight added for ${weightForm.name}!`);
+    setWeightForm(resetWeightForm());
     await loadWeights();
   }
 
@@ -106,6 +114,7 @@ function App() {
   async function onWorkoutSubmit(e: FormEvent) {
     e.preventDefault();
     setWorkoutError("");
+    setWorkoutSuccess("");
     const cardioDone = workoutForm.cardio_done === "true";
 
     const response = await fetch(`${API_BASE}/workouts`, {
@@ -133,6 +142,8 @@ function App() {
       setWorkoutError(`Failed to add workout (${response.status}): ${text}`);
       return;
     }
+    setWorkoutSuccess(`✓ Workout logged for ${workoutForm.name}!`);
+    setWorkoutForm(resetWorkoutForm());
     await loadWorkouts();
   }
 
@@ -145,6 +156,20 @@ function App() {
     void loadWeights();
     void loadWorkouts();
   }, []);
+
+  useEffect(() => {
+    if (weightSuccess) {
+      const timer = setTimeout(() => setWeightSuccess(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [weightSuccess]);
+
+  useEffect(() => {
+    if (workoutSuccess) {
+      const timer = setTimeout(() => setWorkoutSuccess(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [workoutSuccess]);
 
   const recentWeights = [...weights]
     .sort((a, b) => toSortableDate(b.date) - toSortableDate(a.date) || b.id - a.id)
@@ -416,6 +441,7 @@ function App() {
             <button type="submit">Add Weight</button>
           </form>
           {weightError ? <p className="error-text">{weightError}</p> : null}
+          {weightSuccess ? <p className="success-text">{weightSuccess}</p> : null}
 
           <h3>Recent Weight Entries</h3>
           {recentWeights.map((entry) => (
@@ -493,6 +519,7 @@ function App() {
             <button type="submit">Add Workout</button>
           </form>
           {workoutError ? <p className="error-text">{workoutError}</p> : null}
+          {workoutSuccess ? <p className="success-text">{workoutSuccess}</p> : null}
 
           <h3>Recent Workouts</h3>
           {recentWorkouts.map((workout) => (
