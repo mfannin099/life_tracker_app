@@ -69,6 +69,19 @@ function formatCalendarDay(date: Date): string {
   }).format(date);
 }
 
+function formatWeekdayShort(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+  }).format(date);
+}
+
+function formatMonthDayShort(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
 function buildMonthGrid(date: Date) {
   const { start, end } = getMonthBounds(date);
   const leadingBlanks = start.getDay();
@@ -475,6 +488,99 @@ function App() {
   }
 
   if (view === "all_workouts") {
+    const liftSplitLabels: Record<string, string> = {
+      push: "Push",
+      pull: "Pull",
+      legs: "Legs",
+      shoulders: "Shoulders",
+      arms: "Arms",
+      full_body: "Full Body",
+      rest: "Rest",
+      other: "Other",
+    };
+    const liftSplitOrder = ["push", "pull", "legs", "shoulders", "arms", "full_body", "rest", "other"];
+    const liftSplitCounts = liftSplitOrder.map((key) => {
+      const count = allWorkouts.filter((workout) => workout.lift_split === key).length;
+      return {
+        key,
+        label: liftSplitLabels[key] ?? key,
+        count,
+      };
+    });
+    const liftSplitMax = Math.max(1, ...liftSplitCounts.map((item) => item.count));
+
+    const broadFocusCounts = [
+      {
+        label: "Upper",
+        count: allWorkouts.filter((workout) =>
+          ["push", "pull", "shoulders", "arms"].includes(workout.lift_split),
+        ).length,
+      },
+      {
+        label: "Lower",
+        count: allWorkouts.filter((workout) => workout.lift_split === "legs").length,
+      },
+      {
+        label: "Full Body",
+        count: allWorkouts.filter((workout) => workout.lift_split === "full_body").length,
+      },
+      {
+        label: "Rest",
+        count: allWorkouts.filter((workout) => workout.lift_split === "rest").length,
+      },
+      {
+        label: "Other",
+        count: allWorkouts.filter((workout) => workout.lift_split === "other").length,
+      },
+    ];
+
+    const muscleGroupCountsMap = new Map<string, number>();
+    allWorkouts.forEach((workout) => {
+      const muscleGroup = workout.secondary_muscle_group?.trim() || "No secondary muscle";
+      muscleGroupCountsMap.set(muscleGroup, (muscleGroupCountsMap.get(muscleGroup) ?? 0) + 1);
+    });
+    const muscleGroupCounts = Array.from(muscleGroupCountsMap.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    const muscleGroupMax = Math.max(1, ...muscleGroupCounts.map((item) => item.count));
+
+    const cardioWorkouts = allWorkouts.filter((workout) => workout.cardio_done);
+    const cardioMilesTotal = cardioWorkouts.reduce((sum, workout) => sum + (workout.cardio_distance_miles ?? 0), 0);
+    const cardioMinutesTotal = cardioWorkouts.reduce((sum, workout) => sum + (workout.cardio_duration_minutes ?? 0), 0);
+    const cardioSessionsWithDuration = cardioWorkouts.filter(
+      (workout) => typeof workout.cardio_duration_minutes === "number",
+    ).length;
+    const avgSessionLength =
+      cardioSessionsWithDuration > 0 ? cardioMinutesTotal / cardioSessionsWithDuration : null;
+
+    const cardioWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    const cardioThisWeek = cardioWorkouts.filter((workout) => {
+      const workoutDate = toDate(workout.date);
+      return workoutDate >= cardioWeekStart && workoutDate <= now;
+    });
+    const cardioMilesThisWeek = cardioThisWeek.reduce(
+      (sum, workout) => sum + (workout.cardio_distance_miles ?? 0),
+      0,
+    );
+    const cardioMinutesThisWeek = cardioThisWeek.reduce(
+      (sum, workout) => sum + (workout.cardio_duration_minutes ?? 0),
+      0,
+    );
+    const cardioDailyVolume = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - index));
+      const dayMatches = cardioWorkouts.filter(
+        (workout) => toDate(workout.date).toDateString() === day.toDateString(),
+      );
+      return {
+        label: formatWeekdayShort(day),
+        sublabel: formatMonthDayShort(day),
+        workouts: dayMatches.length,
+        miles: dayMatches.reduce((sum, workout) => sum + (workout.cardio_distance_miles ?? 0), 0),
+        minutes: dayMatches.reduce((sum, workout) => sum + (workout.cardio_duration_minutes ?? 0), 0),
+      };
+    });
+    const cardioDailyPeak = Math.max(1, ...cardioDailyVolume.map((item) => item.workouts));
+
     return (
       <main>
         <header className="page-header">
@@ -485,6 +591,127 @@ function App() {
           <button type="button" className="ghost" onClick={() => setView("dashboard")}>
             Back to Dashboard
           </button>
+          <section className="workout-analytics">
+            <div className="workout-analytics-header">
+              <div>
+                <span className="insights-kicker">Workout Analytics</span>
+                <h3 style={{ margin: "6px 0 0" }}>Training breakdown</h3>
+              </div>
+              <div className="analytics-summary-chip">
+                <span>Total workouts</span>
+                <strong>{allWorkouts.length}</strong>
+              </div>
+            </div>
+
+            <div className="workout-analytics-grid">
+              <article className="analytics-panel">
+                <div className="analytics-panel-title">
+                  <h4>Lift Split Analysis</h4>
+                  <span>Raw split counts and broader focus buckets</span>
+                </div>
+
+                <div className="analytics-list">
+                  {liftSplitCounts.map((item) => (
+                    <div className="analytics-row" key={item.key}>
+                      <div className="analytics-row-label">
+                        <span>{item.label}</span>
+                        <strong>{item.count}</strong>
+                      </div>
+                      <div className="analytics-bar-track">
+                        <div
+                          className="analytics-bar-fill analytics-bar-fill-blue"
+                          style={{ width: `${(item.count / liftSplitMax) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="focus-chip-row">
+                  {broadFocusCounts.map((item) => (
+                    <div className="focus-chip" key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.count}</strong>
+                      <em>{allWorkouts.length > 0 ? Math.round((item.count / allWorkouts.length) * 100) : 0}%</em>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="analytics-panel">
+                <div className="analytics-panel-title">
+                  <h4>Muscle Group Analysis</h4>
+                  <span>Secondary muscle group frequency</span>
+                </div>
+
+                <div className="analytics-list">
+                  {muscleGroupCounts.map((item) => (
+                    <div className="analytics-row" key={item.label}>
+                      <div className="analytics-row-label">
+                        <span>{item.label}</span>
+                        <strong>{item.count}</strong>
+                      </div>
+                      <div className="analytics-bar-track">
+                        <div
+                          className="analytics-bar-fill analytics-bar-fill-green"
+                          style={{ width: `${(item.count / muscleGroupMax) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="analytics-panel analytics-panel-wide">
+                <div className="analytics-panel-title">
+                  <h4>Cardio Analytics</h4>
+                  <span>All cardio plus current 7-day volume</span>
+                </div>
+
+                <div className="cardio-kpi-grid">
+                  <div className="kpi-card">
+                    <span>Cardio sessions</span>
+                    <strong>{cardioWorkouts.length}</strong>
+                  </div>
+                  <div className="kpi-card">
+                    <span>Total miles</span>
+                    <strong>{cardioMilesTotal.toFixed(1)}</strong>
+                  </div>
+                  <div className="kpi-card">
+                    <span>Total minutes</span>
+                    <strong>{cardioMinutesTotal}</strong>
+                  </div>
+                  <div className="kpi-card">
+                    <span>Avg session length</span>
+                    <strong>{avgSessionLength !== null ? `${avgSessionLength.toFixed(1)} min` : "--"}</strong>
+                  </div>
+                </div>
+
+                <div className="cardio-weekly-strip">
+                  <div className="cardio-weekly-strip-head">
+                    <span>Weekly Cardio Volume</span>
+                    <strong>
+                      {cardioMilesThisWeek.toFixed(1)} mi / {cardioMinutesThisWeek} min
+                    </strong>
+                  </div>
+                  <div className="cardio-weekly-bars">
+                    {cardioDailyVolume.map((item) => (
+                      <div className="cardio-day" key={`${item.label}-${item.sublabel}`}>
+                        <span className="cardio-day-label">{item.label}</span>
+                        <div className="cardio-day-bar-track" title={`${item.sublabel}: ${item.workouts} workouts`}>
+                          <div
+                            className="cardio-day-bar-fill"
+                            style={{ height: `${(item.workouts / cardioDailyPeak) * 100}%` }}
+                          />
+                        </div>
+                        <span className="cardio-day-meta">{item.workouts}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
           <div className="table-wrap">
             <table className="data-table">
               <thead>

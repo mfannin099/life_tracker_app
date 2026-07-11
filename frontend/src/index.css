@@ -95,6 +95,263 @@ h3 {
     rgba(255, 255, 255, 0.92);
 }
 
+.workout-analytics {
+  margin: 16px 0 20px;
+}
+
+.workout-analytics-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.analytics-summary-chip {
+  min-width: 116px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #bae6fd;
+  background: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.analytics-summary-chip span {
+  display: block;
+  font-size: 0.74rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.analytics-summary-chip strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.workout-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-panel {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.analytics-panel-wide {
+  grid-column: 1 / -1;
+}
+
+.analytics-panel-title h4 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.analytics-panel-title span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.analytics-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.analytics-row {
+  display: grid;
+  gap: 8px;
+}
+
+.analytics-row-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.analytics-row-label span {
+  font-size: 0.9rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.analytics-row-label strong {
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.analytics-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.analytics-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.analytics-bar-fill-blue {
+  background: linear-gradient(90deg, #0891b2, #2563eb);
+}
+
+.analytics-bar-fill-green {
+  background: linear-gradient(90deg, #16a34a, #059669);
+}
+
+.focus-chip-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.focus-chip {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.focus-chip span {
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.focus-chip strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.focus-chip em {
+  display: block;
+  margin-top: 3px;
+  font-style: normal;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.cardio-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.kpi-card {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(255, 255, 255, 1));
+}
+
+.kpi-card span {
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.kpi-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.cardio-weekly-strip {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.cardio-weekly-strip-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cardio-weekly-strip-head span {
+  font-size: 0.84rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cardio-weekly-strip-head strong {
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.cardio-weekly-bars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 150px;
+}
+
+.cardio-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardio-day-label {
+  font-size: 0.74rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cardio-day-bar-track {
+  width: 100%;
+  height: 96px;
+  border-radius: 14px;
+  background: #e2e8f0;
+  display: flex;
+  align-items: end;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+}
+
+.cardio-day-bar-fill {
+  width: 100%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #fb923c, #ea580c);
+  min-height: 4px;
+}
+
+.cardio-day-meta {
+  font-size: 0.8rem;
+  color: #334155;
+}
+
 .workout-insights-header {
   display: flex;
   justify-content: space-between;
@@ -446,6 +703,18 @@ button:disabled:hover {
     grid-template-columns: 1fr;
   }
 
+  .workout-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .focus-chip-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cardio-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .workout-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -456,7 +725,16 @@ button:disabled:hover {
     flex-direction: column;
   }
 
+  .workout-analytics-header {
+    flex-direction: column;
+  }
+
   .workout-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .focus-chip-row,
+  .cardio-kpi-grid {
     grid-template-columns: 1fr;
   }
 
@@ -467,5 +745,10 @@ button:disabled:hover {
 
   .calendar-cell {
     min-height: 46px;
+  }
+
+  .cardio-weekly-strip-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
