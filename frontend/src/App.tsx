@@ -23,6 +23,13 @@ type Workout = {
   created_at: string;
 };
 
+type WeightChartRow = {
+  date: string;
+  avg?: number | null;
+  moving_avg?: number | null;
+  [key: string]: string | number | null | undefined;
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 function toSortableDate(value: string): number {
@@ -41,6 +48,97 @@ function todayDateString(): string {
   const day = String(today.getDate()).padStart(2, "0");
   const year = String(today.getFullYear());
   return `${month}-${day}-${year}`;
+}
+
+function getMonthBounds(date: Date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return { start, end };
+}
+
+function formatMonthLabel(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatCalendarDay(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+  }).format(date);
+}
+
+function buildMonthGrid(date: Date) {
+  const { start, end } = getMonthBounds(date);
+  const leadingBlanks = start.getDay();
+  const daysInMonth = end.getDate();
+  const cells: Array<{ key: string; date: Date | null }> = [];
+
+  for (let i = 0; i < leadingBlanks; i++) {
+    cells.push({ key: `blank-${i}`, date: null });
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({
+      key: `day-${day}`,
+      date: new Date(date.getFullYear(), date.getMonth(), day),
+    });
+  }
+
+  return cells;
+}
+
+function uniqueWorkoutDates(workouts: Workout[]): Set<string> {
+  return new Set(workouts.map((workout) => workout.date));
+}
+
+function countWorkoutsInRange(workouts: Workout[], start: Date, end: Date): number {
+  return workouts.filter((workout) => {
+    const workoutDate = toDate(workout.date);
+    return workoutDate >= start && workoutDate <= end;
+  }).length;
+}
+
+function calculateWorkoutStreaks(workouts: Workout[]) {
+  const workoutDates = new Set(
+    workouts.map((workout) => {
+      const [month, day, year] = workout.date.split("-").map(Number);
+      return new Date(year, month - 1, day).setHours(0, 0, 0, 0);
+    }),
+  );
+
+  if (workoutDates.size === 0) {
+    return { currentStreak: 0, longestStreak: 0 };
+  }
+
+  const sortedDates = Array.from(workoutDates).sort((a, b) => a - b);
+  let longestStreak = 1;
+  let currentRun = 1;
+
+  for (let i = 1; i < sortedDates.length; i++) {
+    const prev = sortedDates[i - 1];
+    const current = sortedDates[i];
+    const dayDiff = Math.round((current - prev) / (1000 * 60 * 60 * 24));
+
+    if (dayDiff === 1) {
+      currentRun += 1;
+      longestStreak = Math.max(longestStreak, currentRun);
+    } else if (dayDiff > 1) {
+      currentRun = 1;
+    }
+  }
+
+  let currentStreak = 1;
+  let cursor = sortedDates[sortedDates.length - 1];
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  while (workoutDates.has(cursor - oneDay)) {
+    currentStreak += 1;
+    cursor -= oneDay;
+  }
+
+  return { currentStreak, longestStreak };
 }
 
 function App() {
@@ -193,6 +291,17 @@ function App() {
     const workoutDate = toDate(w.date);
     return workoutDate >= lastWeekStart && workoutDate <= now;
   }).length;
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const workoutsThisMonth = countWorkoutsInRange(workouts, currentMonthStart, currentMonthEnd);
+  const workoutStreaks = calculateWorkoutStreaks(workouts);
+  const monthGrid = buildMonthGrid(now);
+  const workoutDatesThisMonth = uniqueWorkoutDates(
+    workouts.filter((workout) => {
+      const workoutDate = toDate(workout.date);
+      return workoutDate >= currentMonthStart && workoutDate <= currentMonthEnd;
+    }),
+  );
 
   if (view === "all_weights") {
     const itemsPerPage = 15;
@@ -208,7 +317,7 @@ function App() {
       dateToUserWeights[entry.date][entry.name] = entry.weight;
     });
     
-    const chartData = Object.entries(dateToUserWeights).map(([date, userWeights]) => ({
+    const chartData: WeightChartRow[] = Object.entries(dateToUserWeights).map(([date, userWeights]) => ({
       date,
       ...userWeights,
     }));
@@ -276,7 +385,15 @@ function App() {
                 />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px' }}
-                  formatter={(value) => value != null ? value.toFixed(1) : '-'}
+                  formatter={(value) => {
+                    const numericValue =
+                      typeof value === "number"
+                        ? value
+                        : Array.isArray(value) && typeof value[0] === "number"
+                          ? value[0]
+                          : null;
+                    return numericValue !== null ? numericValue.toFixed(1) : "-";
+                  }}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '20px' }}
@@ -469,6 +586,85 @@ function App() {
           <button type="button" className="ghost" onClick={() => setView("all_workouts")}>
             View All Workouts Table
           </button>
+          <section className="workout-insights" aria-label="Workout consistency summary">
+            <div className="workout-insights-header">
+              <div>
+                <span className="insights-kicker">Workout Consistency</span>
+                <h3 style={{ margin: "6px 0 0" }}>{formatMonthLabel(now)}</h3>
+              </div>
+              <div className="workout-insight-chip">
+                <span>This week</span>
+                <strong>{workoutsLastWeek}</strong>
+              </div>
+            </div>
+
+            <div className="workout-stats-grid">
+              <article className="workout-stat-card">
+                <span>Workouts This Week</span>
+                <strong>{workoutsLastWeek}</strong>
+              </article>
+              <article className="workout-stat-card">
+                <span>Workouts This Month</span>
+                <strong>{workoutsThisMonth}</strong>
+              </article>
+              <article className="workout-stat-card">
+                <span>Current Streak</span>
+                <strong>{workoutStreaks.currentStreak} days</strong>
+              </article>
+              <article className="workout-stat-card">
+                <span>Longest Streak</span>
+                <strong>{workoutStreaks.longestStreak} days</strong>
+              </article>
+            </div>
+
+            <div className="workout-heatmap">
+              <div className="workout-heatmap-legend">
+                <span>0 = no workout</span>
+                <span>1 = workout present</span>
+              </div>
+              <div className="calendar-weekdays" aria-hidden="true">
+                <span>Sun</span>
+                <span>Mon</span>
+                <span>Tue</span>
+                <span>Wed</span>
+                <span>Thu</span>
+                <span>Fri</span>
+                <span>Sat</span>
+              </div>
+              <div className="calendar-grid" role="grid" aria-label={`Workout heatmap for ${formatMonthLabel(now)}`}>
+                {monthGrid.map((cell) => {
+                  if (!cell.date) {
+                    return <div className="calendar-cell calendar-cell-empty" key={cell.key} aria-hidden="true" />;
+                  }
+
+                  const dayKey = `${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(
+                    cell.date.getDate(),
+                  ).padStart(2, "0")}-${cell.date.getFullYear()}`;
+                  const hasWorkout = workoutDatesThisMonth.has(dayKey);
+                  const isToday = cell.date.toDateString() === now.toDateString();
+
+                  return (
+                    <div
+                      className={[
+                        "calendar-cell",
+                        hasWorkout ? "calendar-cell-active" : "calendar-cell-inactive",
+                        isToday ? "calendar-cell-today" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      key={cell.key}
+                      role="gridcell"
+                      aria-label={`${formatCalendarDay(cell.date)}: ${hasWorkout ? "workout present" : "no workout"}`}
+                      title={`${formatCalendarDay(cell.date)}: ${hasWorkout ? "workout present" : "no workout"}`}
+                    >
+                      <span className="calendar-day-number">{formatCalendarDay(cell.date)}</span>
+                      <strong>{hasWorkout ? "1" : "0"}</strong>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
           <form onSubmit={onWorkoutSubmit}>
             <label>Name</label>
             <input value={workoutForm.name} onChange={(e) => setWorkoutForm({ ...workoutForm, name: e.target.value })} required />
