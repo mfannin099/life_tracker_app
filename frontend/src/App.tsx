@@ -534,16 +534,6 @@ function App() {
       },
     ];
 
-    const muscleGroupCountsMap = new Map<string, number>();
-    allWorkouts.forEach((workout) => {
-      const muscleGroup = workout.secondary_muscle_group?.trim() || "No secondary muscle";
-      muscleGroupCountsMap.set(muscleGroup, (muscleGroupCountsMap.get(muscleGroup) ?? 0) + 1);
-    });
-    const muscleGroupCounts = Array.from(muscleGroupCountsMap.entries())
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-    const muscleGroupMax = Math.max(1, ...muscleGroupCounts.map((item) => item.count));
-
     const cardioWorkouts = allWorkouts.filter((workout) => workout.cardio_done);
     const cardioMilesTotal = cardioWorkouts.reduce((sum, workout) => sum + (workout.cardio_distance_miles ?? 0), 0);
     const cardioMinutesTotal = cardioWorkouts.reduce((sum, workout) => sum + (workout.cardio_duration_minutes ?? 0), 0);
@@ -604,7 +594,7 @@ function App() {
             </div>
 
             <div className="workout-analytics-grid">
-              <article className="analytics-panel">
+              <article className="analytics-panel analytics-panel-wide">
                 <div className="analytics-panel-title">
                   <h4>Lift Split Analysis</h4>
                   <span>Raw split counts and broader focus buckets</span>
@@ -633,30 +623,6 @@ function App() {
                       <span>{item.label}</span>
                       <strong>{item.count}</strong>
                       <em>{allWorkouts.length > 0 ? Math.round((item.count / allWorkouts.length) * 100) : 0}%</em>
-                    </div>
-                  ))}
-                </div>
-              </article>
-
-              <article className="analytics-panel">
-                <div className="analytics-panel-title">
-                  <h4>Muscle Group Analysis</h4>
-                  <span>Secondary muscle group frequency</span>
-                </div>
-
-                <div className="analytics-list">
-                  {muscleGroupCounts.map((item) => (
-                    <div className="analytics-row" key={item.label}>
-                      <div className="analytics-row-label">
-                        <span>{item.label}</span>
-                        <strong>{item.count}</strong>
-                      </div>
-                      <div className="analytics-bar-track">
-                        <div
-                          className="analytics-bar-fill analytics-bar-fill-green"
-                          style={{ width: `${(item.count / muscleGroupMax) * 100}%` }}
-                        />
-                      </div>
                     </div>
                   ))}
                 </div>
