@@ -18,7 +18,7 @@ from workouts_database import (
     update_workout,
 )
 
-app = FastAPI(title="Life Tracker API", description="API for tracking weight and workouts over time", version="1.0.0")
+app = FastAPI(title="Fitness Tracker API", description="API for tracking weight and workouts over time", version="1.0.0")
 
 templates = Jinja2Templates(directory="templates")
 

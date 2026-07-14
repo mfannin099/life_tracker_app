@@ -164,9 +164,17 @@ function App() {
   const [workoutSuccess, setWorkoutSuccess] = useState("");
   const [weightsPage, setWeightsPage] = useState(0);
 
-  const resetWeightForm = () => ({ name: "", date: todayDateString(), weight: "" });
+  const STORED_NAME_KEY = "fitnessTracker.name";
+  const getStoredName = () => localStorage.getItem(STORED_NAME_KEY) ?? "";
+  const rememberName = (name: string) => {
+    if (name.trim()) {
+      localStorage.setItem(STORED_NAME_KEY, name.trim());
+    }
+  };
+
+  const resetWeightForm = () => ({ name: getStoredName(), date: todayDateString(), weight: "" });
   const resetWorkoutForm = () => ({
-    name: "",
+    name: getStoredName(),
     date: todayDateString(),
     lift_split: "push",
     secondary_muscle_group: "",
@@ -213,11 +221,15 @@ function App() {
       return;
     }
     setWeightSuccess(`✓ Weight added for ${weightForm.name}!`);
+    rememberName(weightForm.name);
     setWeightForm(resetWeightForm());
     await loadWeights();
   }
 
   async function deleteWeight(id: number) {
+    if (!window.confirm("Delete this weight entry? This cannot be undone.")) {
+      return;
+    }
     await fetch(`${API_BASE}/weights/${id}`, { method: "DELETE" });
     await loadWeights();
   }
@@ -254,11 +266,15 @@ function App() {
       return;
     }
     setWorkoutSuccess(`✓ Workout logged for ${workoutForm.name}!`);
+    rememberName(workoutForm.name);
     setWorkoutForm(resetWorkoutForm());
     await loadWorkouts();
   }
 
   async function deleteWorkout(id: number) {
+    if (!window.confirm("Delete this workout entry? This cannot be undone.")) {
+      return;
+    }
     await fetch(`${API_BASE}/workouts/${id}`, { method: "DELETE" });
     await loadWorkouts();
   }
@@ -716,7 +732,7 @@ function App() {
   return (
     <main>
       <header className="page-header">
-        <h1>Life Tracker</h1>
+        <h1>Fitness Tracker</h1>
         <p>Track your weight and workouts with a cleaner daily flow.</p>
       </header>
 
