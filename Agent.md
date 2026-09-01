@@ -9,7 +9,7 @@ It includes:
 - API endpoints for create/read/update/delete (CRUD)
 - A simple HTML UI served from `/` (`templates/index.html`)
 - A React + TypeScript frontend in `frontend/`
-- SQLite persistence in the local `data/` folder
+- Supabase (hosted Postgres) persistence, accessed via the `supabase-py` client
 
 ## Tech Stack
 - Python 3.x
@@ -17,30 +17,38 @@ It includes:
 - Uvicorn
 - Jinja2
 - React + TypeScript (Vite) frontend
-- SQLite (via Python `sqlite3`)
+- Supabase (Postgres) via `supabase-py`, credentials loaded from `.env` with `python-dotenv`
 
 Dependencies are in `requirements.txt`:
 - `fastapi==0.104.1`
 - `uvicorn[standard]==0.24.0`
 - `jinja2==3.1.2`
+- `supabase>=2.10.0`
+- `python-dotenv>=1.0.1`
 
 ## Project Layout
 - `main.py`: FastAPI app, request validation, API routes, template route
-- `database.py`: weight table init + CRUD
-- `workouts_database.py`: workout table init + CRUD
+- `supabase_client.py`: lazily-created singleton Supabase client, reads `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` from env
+- `database.py`: weight CRUD against the `weights` Supabase table
+- `workouts_database.py`: workout CRUD against the `workouts` Supabase table
+- `supabase/schema.sql`: SQL to run once in the Supabase SQL Editor to create the tables/indexes
+- `.env.example`: template for the required Supabase env vars (copy to `.env`, which is gitignored)
 - `templates/index.html`: UI form + frontend fetch logic
 - `frontend/`: React TypeScript app (new primary frontend)
-- `data/weights.db`: SQLite database for weights
-- `data/workouts.db`: SQLite database for workouts
+- `data/weights.db`, `data/workouts.db`: legacy SQLite files, kept only as a source for one-time migration
+- `scratch/migrate_to_supabase.py`: one-off script to copy rows from the legacy SQLite files into Supabase
+- `scratch/inspect_databases.py`: inspects the legacy SQLite files directly via DuckDB (pre-Supabase tooling, still useful for verifying the old data before/after migration)
 - `scratch/test_api.py`: quick manual API test script for weight endpoints
 - `README.md`: project documentation
 
 ## App Startup Flow
-In `main.py`, FastAPI startup event runs:
-- `init_db()` from `database.py`
-- `init_workouts_db()` from `workouts_database.py`
+In `main.py`, FastAPI startup event calls `init_db()` and `init_workouts_db()`, which are now no-ops kept for interface stability — table creation happens via `supabase/schema.sql`, not at app startup. The Supabase client itself is created lazily on first query and raises `RuntimeError` if `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` aren't set.
 
-This auto-creates the `data/` directory and tables if missing.
+## Supabase Setup (one-time)
+1. In the Supabase dashboard, open SQL Editor and run `supabase/schema.sql` to create the `weights` and `workouts` tables.
+2. Copy `.env.example` to `.env` and fill in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (Project Settings -> API).
+3. Optional: migrate existing local data with `uv run python scratch/migrate_to_supabase.py` (reads `data/weights.db` and `data/workouts.db`, inserts rows into Supabase).
+4. RLS is left disabled on both tables since the backend uses the service role key from a trusted server context, not a browser-side client. If a Supabase client is ever added to the frontend, enable RLS and add policies first.
 
 ## Data Model Summary
 
@@ -145,7 +153,7 @@ If resuming work, these are good priorities:
 1. Store dates in ISO (`YYYY-MM-DD`) or store an additional normalized date column for reliable SQL sorting.
 2. Add tests (currently no formal automated test suite).
 3. Update `README.md` to include workout endpoints and current validation rules.
-4. Consider migrations/unified DB strategy (currently two separate SQLite files).
+4. Consider a schema migration tool (e.g. Supabase migrations/`supabase db diff`) instead of hand-editing `supabase/schema.sql`.
 5. Improve error logging granularity (most exceptions become generic 500 detail strings).
 
 ## How To Run Locally
@@ -155,6 +163,8 @@ From project root (`life_tracker_app`):
 ```bash
 pip install -r requirements.txt
 ```
+
+1a. Set up Supabase (one-time, see "Supabase Setup" above): run `supabase/schema.sql` in the Supabase SQL Editor, then copy `.env.example` to `.env` and fill in your project's `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 
 2. Run server:
 ```bash
@@ -181,7 +191,7 @@ When coming back after time away:
 2. Check `database.py` and `workouts_database.py` for schema/CRUD.
 3. Open `templates/index.html` for legacy UI behavior.
 4. Open `frontend/src/App.tsx` for current frontend behavior.
-5. Verify current DB contents in `data/*.db` before major changes.
+5. Verify current data via the Supabase Table Editor (or the legacy `data/*.db` files, pre-migration) before major changes.
 6. If editing date logic, update backend validators and frontend assumptions.
 
 ## Guidance for Codex (future agent runs)

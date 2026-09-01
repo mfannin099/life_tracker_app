@@ -1,66 +1,50 @@
-import sqlite3
-from pathlib import Path
+from supabase_client import get_supabase
 
-DATABASE_PATH = Path("data/weights.db")
+TABLE = "weights"
 
-def get_db_connection():
-    """Get a connection to the SQLite database."""
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row  # Enable column access by name
-    return conn
 
 def init_db():
-    """Initialize the database and create the weights table if it doesn't exist."""
-    DATABASE_PATH.parent.mkdir(exist_ok=True)  # Ensure data directory exists
-    conn = get_db_connection()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS weights (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            date TEXT NOT NULL,
-            weight REAL NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    """No-op: the weights table is created via supabase/schema.sql in the Supabase dashboard."""
+    pass
+
 
 def insert_weight(name: str, date: str, weight: float):
-    """Insert a new weight entry into the database."""
+    """Insert a new weight entry into Supabase."""
     # Normalize name to avoid accidental duplicates like trailing spaces
     name = (name or "").strip()
-    conn = get_db_connection()
-    conn.execute('INSERT INTO weights (name, date, weight) VALUES (?, ?, ?)', (name, date, weight))
-    conn.commit()
-    conn.close()
+    get_supabase().table(TABLE).insert(
+        {"name": name, "date": date, "weight": weight}
+    ).execute()
+
 
 def get_all_weights():
-    """Retrieve all weight entries from the database."""
-    conn = get_db_connection()
+    """Retrieve all weight entries from Supabase."""
     # Date is stored as mm-dd-yyyy text, so ordering is lexicographic.
-    rows = conn.execute('SELECT id, name, date, weight, created_at FROM weights ORDER BY date').fetchall()
-    conn.close()
-    return [dict(row) for row in rows]
+    response = (
+        get_supabase()
+        .table(TABLE)
+        .select("id,name,date,weight,created_at")
+        .order("date")
+        .execute()
+    )
+    return response.data
+
 
 def update_weight(entry_id: int, name: str, date: str, weight: float) -> bool:
     """Update a weight entry. Returns True if a row was updated."""
     # Normalize name to avoid accidental duplicates like trailing spaces
     name = (name or "").strip()
-    conn = get_db_connection()
-    cursor = conn.execute(
-        'UPDATE weights SET name = ?, date = ?, weight = ? WHERE id = ?',
-        (name, date, weight, entry_id),
+    response = (
+        get_supabase()
+        .table(TABLE)
+        .update({"name": name, "date": date, "weight": weight})
+        .eq("id", entry_id)
+        .execute()
     )
-    conn.commit()
-    updated = cursor.rowcount > 0
-    conn.close()
-    return updated
+    return len(response.data) > 0
+
 
 def delete_weight(entry_id: int) -> bool:
     """Delete a weight entry. Returns True if a row was deleted."""
-    conn = get_db_connection()
-    cursor = conn.execute('DELETE FROM weights WHERE id = ?', (entry_id,))
-    conn.commit()
-    deleted = cursor.rowcount > 0
-    conn.close()
-    return deleted
+    response = get_supabase().table(TABLE).delete().eq("id", entry_id).execute()
+    return len(response.data) > 0

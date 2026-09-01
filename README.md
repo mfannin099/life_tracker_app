@@ -5,7 +5,7 @@ Life Tracker is a FastAPI + React application for tracking:
 - Workout entries (lift split, secondary muscle group, cardio metadata)
 
 The backend is now managed with `uv`, and the frontend is a React/Vite app in `frontend/`.
-Data is persisted locally in SQLite databases under `data/`.
+Data is persisted in Supabase (hosted Postgres), accessed via the `supabase-py` client.
 
 ## What changed
 
@@ -18,6 +18,11 @@ Data is persisted locally in SQLite databases under `data/`.
 ## Quick start (recommended)
 
 ### Backend
+
+One-time Supabase setup:
+1. Run `supabase/schema.sql` in the Supabase SQL Editor to create the `weights` and `workouts` tables.
+2. Copy `.env.example` to `.env` and fill in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (from Project Settings -> API).
+3. Optional: migrate existing local SQLite data with `uv run python scratch/migrate_to_supabase.py`.
 
 From the project root:
 
@@ -61,17 +66,20 @@ Then open:
 - React
 - TypeScript
 - Vite
-- SQLite (`sqlite3`)
+- Supabase (Postgres) via `supabase-py`
 
 ## Project Structure
 
 - `main.py`: backend app setup, validation, API routes, template route, CORS config
-- `database.py`: weights table init + CRUD
-- `workouts_database.py`: workouts table init + CRUD
+- `supabase_client.py`: singleton Supabase client, reads credentials from `.env`
+- `database.py`: weights CRUD against the Supabase `weights` table
+- `workouts_database.py`: workouts CRUD against the Supabase `workouts` table
+- `supabase/schema.sql`: one-time table setup, run in the Supabase SQL Editor
+- `.env.example`: template for `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`
 - `templates/index.html`: legacy web UI
 - `frontend/`: Vite React TypeScript UI
-- `data/weights.db`: weights database
-- `data/workouts.db`: workouts database
+- `data/weights.db`, `data/workouts.db`: legacy SQLite files, kept only as a migration source
+- `scratch/migrate_to_supabase.py`: one-off script to copy legacy SQLite rows into Supabase
 - `scratch/test_api.py`: manual test script for weight endpoint
 
 ## Backend workflow
@@ -152,11 +160,10 @@ curl -X POST "http://localhost:8000/workouts" \
 
 ## Database Notes
 
-- Databases are created automatically on startup.
-- Weight data is stored in `data/weights.db`.
-- Workout data is stored in `data/workouts.db`.
+- Tables live in Supabase (Postgres); create them once via `supabase/schema.sql` in the Supabase SQL Editor.
+- Weight data is stored in the `weights` table, workout data in the `workouts` table.
 - Dates are stored as text (`mm-dd-yyyy`), so SQL sort behavior is lexicographic.
-- Existing workout DBs are migrated on startup to include `secondary_muscle_group` if missing.
+- The backend talks to Supabase with the service role key (server-side only, bypasses RLS); RLS is left disabled on both tables since no browser-side Supabase client is used.
 
 ## Frontend API / CORS
 
