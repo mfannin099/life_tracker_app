@@ -18,3 +18,6 @@ try:
     print("GET Response:", response.json())
 except Exception as e:
     print("GET Error:", e)
+
+
+    
