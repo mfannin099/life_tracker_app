@@ -35,9 +35,6 @@ Dependencies are in `requirements.txt`:
 - `.env.example`: template for the required Supabase env vars (copy to `.env`, which is gitignored)
 - `templates/index.html`: UI form + frontend fetch logic
 - `frontend/`: React TypeScript app (new primary frontend)
-- `data/weights.db`, `data/workouts.db`: legacy SQLite files, kept only as a source for one-time migration
-- `scratch/migrate_to_supabase.py`: one-off script to copy rows from the legacy SQLite files into Supabase
-- `scratch/inspect_databases.py`: inspects the legacy SQLite files directly via DuckDB (pre-Supabase tooling, still useful for verifying the old data before/after migration)
 - `scratch/test_api.py`: quick manual API test script for weight endpoints
 - `README.md`: project documentation
 
@@ -47,12 +44,11 @@ In `main.py`, FastAPI startup event calls `init_db()` and `init_workouts_db()`, 
 ## Supabase Setup (one-time)
 1. In the Supabase dashboard, open SQL Editor and run `supabase/schema.sql` to create the `weights` and `workouts` tables.
 2. Copy `.env.example` to `.env` and fill in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (Project Settings -> API).
-3. Optional: migrate existing local data with `uv run python scratch/migrate_to_supabase.py` (reads `data/weights.db` and `data/workouts.db`, inserts rows into Supabase).
-4. RLS is left disabled on both tables since the backend uses the service role key from a trusted server context, not a browser-side client. If a Supabase client is ever added to the frontend, enable RLS and add policies first.
+3. RLS is left disabled on both tables since the backend uses the service role key from a trusted server context, not a browser-side client. If a Supabase client is ever added to the frontend, enable RLS and add policies first.
 
 ## Data Model Summary
 
-### Weights table (`weights.db`)
+### Weights table (`weights`)
 Table: `weights`
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
 - `name` TEXT NOT NULL
@@ -60,7 +56,7 @@ Table: `weights`
 - `weight` REAL NOT NULL
 - `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-### Workouts table (`workouts.db`)
+### Workouts table (`workouts`)
 Table: `workouts`
 - `id` INTEGER PRIMARY KEY AUTOINCREMENT
 - `name` TEXT NOT NULL
@@ -191,7 +187,7 @@ When coming back after time away:
 2. Check `database.py` and `workouts_database.py` for schema/CRUD.
 3. Open `templates/index.html` for legacy UI behavior.
 4. Open `frontend/src/App.tsx` for current frontend behavior.
-5. Verify current data via the Supabase Table Editor (or the legacy `data/*.db` files, pre-migration) before major changes.
+5. Verify current data via the Supabase Table Editor before major changes.
 6. If editing date logic, update backend validators and frontend assumptions.
 
 ## Guidance for Codex (future agent runs)

@@ -22,7 +22,6 @@ Data is persisted in Supabase (hosted Postgres), accessed via the `supabase-py` 
 One-time Supabase setup:
 1. Run `supabase/schema.sql` in the Supabase SQL Editor to create the `weights` and `workouts` tables.
 2. Copy `.env.example` to `.env` and fill in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (from Project Settings -> API).
-3. Optional: migrate existing local SQLite data with `uv run python scratch/migrate_to_supabase.py`.
 
 From the project root:
 
@@ -78,8 +77,6 @@ Then open:
 - `.env.example`: template for `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`
 - `templates/index.html`: legacy web UI
 - `frontend/`: Vite React TypeScript UI
-- `data/weights.db`, `data/workouts.db`: legacy SQLite files, kept only as a migration source
-- `scratch/migrate_to_supabase.py`: one-off script to copy legacy SQLite rows into Supabase
 - `scratch/test_api.py`: manual test script for weight endpoint
 
 ## Backend workflow
