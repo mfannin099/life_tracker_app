@@ -206,24 +206,28 @@ function App() {
     e.preventDefault();
     setWeightError("");
     setWeightSuccess("");
-    const response = await fetch(`${API_BASE}/weights`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: weightForm.name,
-        date: weightForm.date,
-        weight: Number(weightForm.weight),
-      }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      setWeightError(`Failed to add weight (${response.status}): ${text}`);
-      return;
+    try {
+      const response = await fetch(`${API_BASE}/weights`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: weightForm.name,
+          date: weightForm.date,
+          weight: Number(weightForm.weight),
+        }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        setWeightError(`Failed to add weight (${response.status}): ${text}`);
+        return;
+      }
+      setWeightSuccess(`✓ Weight added for ${weightForm.name}!`);
+      rememberName(weightForm.name);
+      setWeightForm(resetWeightForm());
+      await loadWeights();
+    } catch (err) {
+      setWeightError(`Failed to add weight: ${err instanceof Error ? err.message : String(err)}`);
     }
-    setWeightSuccess(`✓ Weight added for ${weightForm.name}!`);
-    rememberName(weightForm.name);
-    setWeightForm(resetWeightForm());
-    await loadWeights();
   }
 
   async function deleteWeight(id: number) {
@@ -240,35 +244,39 @@ function App() {
     setWorkoutSuccess("");
     const cardioDone = workoutForm.cardio_done === "true";
 
-    const response = await fetch(`${API_BASE}/workouts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: workoutForm.name,
-        date: workoutForm.date,
-        lift_split: workoutForm.lift_split,
-        secondary_muscle_group: workoutForm.secondary_muscle_group || null,
-        cardio_done: cardioDone,
-        cardio_type: cardioDone ? workoutForm.cardio_type || null : null,
-        cardio_distance_miles:
-          cardioDone && workoutForm.cardio_distance_miles
-            ? Number(workoutForm.cardio_distance_miles)
-            : null,
-        cardio_duration_minutes:
-          cardioDone && workoutForm.cardio_duration_minutes
-            ? Number(workoutForm.cardio_duration_minutes)
-            : null,
-      }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      setWorkoutError(`Failed to add workout (${response.status}): ${text}`);
-      return;
+    try {
+      const response = await fetch(`${API_BASE}/workouts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: workoutForm.name,
+          date: workoutForm.date,
+          lift_split: workoutForm.lift_split,
+          secondary_muscle_group: workoutForm.secondary_muscle_group || null,
+          cardio_done: cardioDone,
+          cardio_type: cardioDone ? workoutForm.cardio_type || null : null,
+          cardio_distance_miles:
+            cardioDone && workoutForm.cardio_distance_miles
+              ? Number(workoutForm.cardio_distance_miles)
+              : null,
+          cardio_duration_minutes:
+            cardioDone && workoutForm.cardio_duration_minutes
+              ? Number(workoutForm.cardio_duration_minutes)
+              : null,
+        }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        setWorkoutError(`Failed to add workout (${response.status}): ${text}`);
+        return;
+      }
+      setWorkoutSuccess(`✓ Workout logged for ${workoutForm.name}!`);
+      rememberName(workoutForm.name);
+      setWorkoutForm(resetWorkoutForm());
+      await loadWorkouts();
+    } catch (err) {
+      setWorkoutError(`Failed to add workout: ${err instanceof Error ? err.message : String(err)}`);
     }
-    setWorkoutSuccess(`✓ Workout logged for ${workoutForm.name}!`);
-    rememberName(workoutForm.name);
-    setWorkoutForm(resetWorkoutForm());
-    await loadWorkouts();
   }
 
   async function deleteWorkout(id: number) {
@@ -913,9 +921,11 @@ function App() {
             <select value={workoutForm.cardio_type} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_type: e.target.value })}>
               <option value="">Select</option>
               <option value="running">Running</option>
+              <option value="walking">Walking</option>
               <option value="biking">Biking</option>
               <option value="swimming">Swimming</option>
               <option value="sports">Sports</option>
+              <option value="other">Other</option>
             </select>
             <label>Cardio Distance (miles)</label>
             <input type="number" step="0.1" value={workoutForm.cardio_distance_miles} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_distance_miles: e.target.value })} />

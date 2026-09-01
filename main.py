@@ -34,6 +34,16 @@ app.add_middleware(
 )
 
 
+def serializable_validation_errors(exc: ValidationError) -> list[dict]:
+    """Pydantic's ValidationError.errors() embeds the raw exception in ctx.error
+    for validators that raise ValueError, which isn't JSON serializable and
+    would otherwise crash the 422 response. Drop ctx and keep loc/msg/type."""
+    return [
+        {"type": err.get("type"), "loc": err.get("loc"), "msg": err.get("msg")}
+        for err in exc.errors()
+    ]
+
+
 def normalize_mmddyyyy_date(value: str) -> str:
     """Accept m-d-yyyy or mm-dd-yyyy and normalize to mm-dd-yyyy."""
     text = value.strip()
@@ -176,7 +186,7 @@ async def add_weight(request: Request):
             "weight": entry.weight,
         }
     except ValidationError as e:
-        raise HTTPException(status_code=422, detail=e.errors())
+        raise HTTPException(status_code=422, detail=serializable_validation_errors(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add weight: {str(e)}")
 
@@ -248,7 +258,7 @@ async def add_workout(request: Request):
             "cardio_done": entry.cardio_done,
         }
     except ValidationError as e:
-        raise HTTPException(status_code=422, detail=e.errors())
+        raise HTTPException(status_code=422, detail=serializable_validation_errors(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add workout: {str(e)}")
 
