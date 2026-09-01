@@ -30,7 +30,10 @@ type WeightChartRow = {
   [key: string]: string | number | null | undefined;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+// In production (e.g. on Vercel) the frontend and API share one domain via
+// vercel.json routes, so relative paths just work. In local dev they run on
+// different ports, so default to the FastAPI dev server unless overridden.
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? "" : "http://localhost:8000");
 
 function toSortableDate(value: string): number {
   const [month, day, year] = value.split("-").map(Number);

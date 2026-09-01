@@ -27,10 +27,10 @@ Dependencies are in `requirements.txt`:
 - `python-dotenv>=1.0.1`
 
 ## Project Layout
-- `main.py`: FastAPI app, request validation, API routes, template route
-- `supabase_client.py`: lazily-created singleton Supabase client, reads `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` from env
-- `database.py`: weight CRUD against the `weights` Supabase table
-- `workouts_database.py`: workout CRUD against the `workouts` Supabase table
+- `api/index.py`: FastAPI app, request validation, API routes, template route
+- `api/supabase_client.py`: lazily-created singleton Supabase client, reads `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` from env
+- `api/database.py`: weight CRUD against the `weights` Supabase table
+- `api/workouts_database.py`: workout CRUD against the `workouts` Supabase table
 - `supabase/schema.sql`: SQL to run once in the Supabase SQL Editor to create the tables/indexes
 - `.env.example`: template for the required Supabase env vars (copy to `.env`, which is gitignored)
 - `templates/index.html`: UI form + frontend fetch logic
@@ -39,7 +39,7 @@ Dependencies are in `requirements.txt`:
 - `README.md`: project documentation
 
 ## App Startup Flow
-In `main.py`, FastAPI startup event calls `init_db()` and `init_workouts_db()`, which are now no-ops kept for interface stability — table creation happens via `supabase/schema.sql`, not at app startup. The Supabase client itself is created lazily on first query and raises `RuntimeError` if `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` aren't set.
+In `api/index.py`, FastAPI startup event calls `init_db()` and `init_workouts_db()`, which are now no-ops kept for interface stability — table creation happens via `supabase/schema.sql`, not at app startup. The Supabase client itself is created lazily on first query and raises `RuntimeError` if `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` aren't set.
 
 ## Supabase Setup (one-time)
 1. In the Supabase dashboard, open SQL Editor and run `supabase/schema.sql` to create the `weights` and `workouts` tables.
@@ -90,7 +90,7 @@ Table: `workouts`
   - If `cardio_done == true`: at least one of distance or duration is required
 
 ## Request Parsing Behavior
-`parse_request_payload()` in `main.py` supports:
+`parse_request_payload()` in `api/index.py` supports:
 - JSON (`application/json`)
 - HTML form posts (`application/x-www-form-urlencoded`)
 
@@ -139,7 +139,7 @@ Notes:
 - React frontend additionally sorts by parsed date desc + id desc and slices to 5 recent rows.
 
 ## CORS
-- `main.py` includes `CORSMiddleware` allowing:
+- `api/index.py` includes `CORSMiddleware` allowing:
   - `http://localhost:5173`
   - `http://127.0.0.1:5173`
 - This is required for Vite dev frontend calls to FastAPI.
@@ -164,7 +164,7 @@ pip install -r requirements.txt
 
 2. Run server:
 ```bash
-uv run uvicorn main:app --reload
+uv run uvicorn index:app --app-dir api --reload
 ```
 
 3. Open:
@@ -183,8 +183,8 @@ npm run dev -- --host 0.0.0.0
 
 ## Quick Re-Entry Checklist (for future you)
 When coming back after time away:
-1. Start with `main.py` to re-understand routes and validation.
-2. Check `database.py` and `workouts_database.py` for schema/CRUD.
+1. Start with `api/index.py` to re-understand routes and validation.
+2. Check `api/database.py` and `api/workouts_database.py` for schema/CRUD.
 3. Open `templates/index.html` for legacy UI behavior.
 4. Open `frontend/src/App.tsx` for current frontend behavior.
 5. Verify current data via the Supabase Table Editor before major changes.
@@ -195,5 +195,5 @@ When coming back after time away:
 - Keep form + JSON compatibility for POST routes.
 - Do not silently change validation semantics for cardio logic.
 - If changing schema, include migration/backfill strategy and update docs.
-- Prefer targeted, minimal edits in `main.py`, `database.py`, `workouts_database.py`, `templates/index.html`, and `frontend/src/*`.
+- Prefer targeted, minimal edits in `api/index.py`, `api/database.py`, `api/workouts_database.py`, `templates/index.html`, and `frontend/src/*`.
 - If tests are added, prioritize endpoint validation and conditional cardio rules.
