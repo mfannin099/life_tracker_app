@@ -1,7 +1,14 @@
+import sys
 from datetime import datetime
+from pathlib import Path
 import re
 from typing import Literal
 from urllib.parse import parse_qs
+
+# Vercel's Python runtime doesn't put this file's own directory on sys.path,
+# so sibling imports (database, workouts_database, supabase_client) fail
+# with ModuleNotFoundError unless we add it ourselves.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
