@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import Literal, Self
+from typing import Literal
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, HTTPException, Request
@@ -137,7 +137,7 @@ class WorkoutEntry(BaseModel):
         return v.strip()
 
     @model_validator(mode="after")
-    def validate_cardio_fields(self) -> Self:
+    def validate_cardio_fields(self) -> "WorkoutEntry":
         if not self.cardio_done:
             self.cardio_type = None
             self.cardio_distance_miles = None
