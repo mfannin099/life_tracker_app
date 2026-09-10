@@ -326,10 +326,12 @@ function App() {
   const latestWeight = recentWeights[0]?.weight ?? null;
   const latestWorkoutSplit = recentWorkouts[0]?.lift_split ?? null;
   const now = new Date();
-  const lastWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+  // Current calendar week, Sunday through Saturday.
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6, 23, 59, 59, 999);
   const workoutsLastWeek = workouts.filter((w) => {
     const workoutDate = toDate(w.date);
-    return workoutDate >= lastWeekStart && workoutDate <= now;
+    return workoutDate >= weekStart && workoutDate <= weekEnd;
   }).length;
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
