@@ -550,6 +550,35 @@ function App() {
       },
     ];
 
+    // Days since each main split was last trained. Limited to the splits the
+    // user actually runs; rest/other/arms/full_body are intentionally excluded.
+    const recencySplits = ["push", "pull", "legs", "shoulders"];
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const splitRecency = recencySplits
+      .map((key) => {
+        // allWorkouts is sorted newest-first, so the first match is the latest.
+        const sessions = allWorkouts.filter((workout) => workout.lift_split === key);
+        const last = sessions[0] ?? null;
+        const daysAgo = last
+          ? Math.max(
+              0,
+              Math.floor((startOfToday.getTime() - toDate(last.date).getTime()) / msPerDay),
+            )
+          : null;
+        const tone =
+          daysAgo === null || daysAgo > 7 ? "stale" : daysAgo > 3 ? "aging" : "fresh";
+        return {
+          key,
+          label: liftSplitLabels[key] ?? key,
+          daysAgo,
+          lastDate: last?.date ?? null,
+          total: sessions.length,
+          tone,
+        };
+      })
+      .sort((a, b) => (b.daysAgo ?? Infinity) - (a.daysAgo ?? Infinity));
+
     return (
       <main>
         <header className="page-header">
@@ -605,6 +634,43 @@ function App() {
                     </div>
                   ))}
                 </div>
+              </article>
+
+              <article className="analytics-panel analytics-panel-wide">
+                <div className="analytics-panel-title">
+                  <h4>Time Since Last Lift</h4>
+                  <span>Days since each main split was last trained</span>
+                </div>
+
+                <table className="recency-table">
+                  <thead>
+                    <tr>
+                      <th>Split</th>
+                      <th>Days ago</th>
+                      <th>Last trained</th>
+                      <th>Sessions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {splitRecency.map((row) => (
+                      <tr key={row.key}>
+                        <td>
+                          <span className={`recency-dot recency-dot-${row.tone}`} aria-hidden="true" />
+                          {row.label}
+                        </td>
+                        <td>
+                          {row.daysAgo === null
+                            ? "Never"
+                            : row.daysAgo === 0
+                              ? "Today"
+                              : `${row.daysAgo}d`}
+                        </td>
+                        <td>{row.lastDate ?? "—"}</td>
+                        <td>{row.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </article>
             </div>
           </section>

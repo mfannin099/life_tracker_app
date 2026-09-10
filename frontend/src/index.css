@@ -215,6 +215,50 @@ h3 {
   margin-top: 14px;
 }
 
+.recency-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+  font-size: 0.9rem;
+}
+
+.recency-table th {
+  text-align: left;
+  padding: 0 8px 8px 0;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.recency-table td {
+  padding: 8px 8px 8px 0;
+  border-top: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.recency-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
+.recency-dot-fresh {
+  background: #16a34a;
+}
+
+.recency-dot-aging {
+  background: #d97706;
+}
+
+.recency-dot-stale {
+  background: #dc2626;
+}
+
 .focus-chip {
   padding: 12px;
   border-radius: 12px;
