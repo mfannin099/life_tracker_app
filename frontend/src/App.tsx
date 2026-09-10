@@ -72,19 +72,6 @@ function formatCalendarDay(date: Date): string {
   }).format(date);
 }
 
-function formatWeekdayShort(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-  }).format(date);
-}
-
-function formatMonthDayShort(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
-
 function buildMonthGrid(date: Date) {
   const { start, end } = getMonthBounds(date);
   const leadingBlanks = start.getDay();
@@ -563,43 +550,6 @@ function App() {
       },
     ];
 
-    const cardioWorkouts = allWorkouts.filter((workout) => workout.cardio_done);
-    const cardioMilesTotal = cardioWorkouts.reduce((sum, workout) => sum + (workout.cardio_distance_miles ?? 0), 0);
-    const cardioMinutesTotal = cardioWorkouts.reduce((sum, workout) => sum + (workout.cardio_duration_minutes ?? 0), 0);
-    const cardioSessionsWithDuration = cardioWorkouts.filter(
-      (workout) => typeof workout.cardio_duration_minutes === "number",
-    ).length;
-    const avgSessionLength =
-      cardioSessionsWithDuration > 0 ? cardioMinutesTotal / cardioSessionsWithDuration : null;
-
-    const cardioWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-    const cardioThisWeek = cardioWorkouts.filter((workout) => {
-      const workoutDate = toDate(workout.date);
-      return workoutDate >= cardioWeekStart && workoutDate <= now;
-    });
-    const cardioMilesThisWeek = cardioThisWeek.reduce(
-      (sum, workout) => sum + (workout.cardio_distance_miles ?? 0),
-      0,
-    );
-    const cardioMinutesThisWeek = cardioThisWeek.reduce(
-      (sum, workout) => sum + (workout.cardio_duration_minutes ?? 0),
-      0,
-    );
-    const cardioDailyVolume = Array.from({ length: 7 }, (_, index) => {
-      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - index));
-      const dayMatches = cardioWorkouts.filter(
-        (workout) => toDate(workout.date).toDateString() === day.toDateString(),
-      );
-      return {
-        label: formatWeekdayShort(day),
-        sublabel: formatMonthDayShort(day),
-        workouts: dayMatches.length,
-        miles: dayMatches.reduce((sum, workout) => sum + (workout.cardio_distance_miles ?? 0), 0),
-        minutes: dayMatches.reduce((sum, workout) => sum + (workout.cardio_duration_minutes ?? 0), 0),
-      };
-    });
-    const cardioDailyPeak = Math.max(1, ...cardioDailyVolume.map((item) => item.workouts));
-
     return (
       <main>
         <header className="page-header">
@@ -654,55 +604,6 @@ function App() {
                       <em>{allWorkouts.length > 0 ? Math.round((item.count / allWorkouts.length) * 100) : 0}%</em>
                     </div>
                   ))}
-                </div>
-              </article>
-
-              <article className="analytics-panel analytics-panel-wide">
-                <div className="analytics-panel-title">
-                  <h4>Cardio Analytics</h4>
-                  <span>All cardio plus current 7-day volume</span>
-                </div>
-
-                <div className="cardio-kpi-grid">
-                  <div className="kpi-card">
-                    <span>Cardio sessions</span>
-                    <strong>{cardioWorkouts.length}</strong>
-                  </div>
-                  <div className="kpi-card">
-                    <span>Total miles</span>
-                    <strong>{cardioMilesTotal.toFixed(1)}</strong>
-                  </div>
-                  <div className="kpi-card">
-                    <span>Total minutes</span>
-                    <strong>{cardioMinutesTotal}</strong>
-                  </div>
-                  <div className="kpi-card">
-                    <span>Avg session length</span>
-                    <strong>{avgSessionLength !== null ? `${avgSessionLength.toFixed(1)} min` : "--"}</strong>
-                  </div>
-                </div>
-
-                <div className="cardio-weekly-strip">
-                  <div className="cardio-weekly-strip-head">
-                    <span>Weekly Cardio Volume</span>
-                    <strong>
-                      {cardioMilesThisWeek.toFixed(1)} mi / {cardioMinutesThisWeek} min
-                    </strong>
-                  </div>
-                  <div className="cardio-weekly-bars">
-                    {cardioDailyVolume.map((item) => (
-                      <div className="cardio-day" key={`${item.label}-${item.sublabel}`}>
-                        <span className="cardio-day-label">{item.label}</span>
-                        <div className="cardio-day-bar-track" title={`${item.sublabel}: ${item.workouts} workouts`}>
-                          <div
-                            className="cardio-day-bar-fill"
-                            style={{ height: `${(item.workouts / cardioDailyPeak) * 100}%` }}
-                          />
-                        </div>
-                        <span className="cardio-day-meta">{item.workouts}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </article>
             </div>
