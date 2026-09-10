@@ -316,7 +316,7 @@ function App() {
   // Current calendar week, Sunday through Saturday.
   const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
   const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6, 23, 59, 59, 999);
-  const workoutsLastWeek = workouts.filter((w) => {
+  const workoutsThisWeek = workouts.filter((w) => {
     const workoutDate = toDate(w.date);
     return workoutDate >= weekStart && workoutDate <= weekEnd;
   }).length;
@@ -718,8 +718,8 @@ function App() {
           <strong>{latestWeight !== null ? `${latestWeight} lbs` : "--"}</strong>
         </article>
         <article className="summary-card">
-          <span>Workouts Last 7 Days</span>
-          <strong>{workoutsLastWeek}</strong>
+          <span>Workouts This Week</span>
+          <strong>{workoutsThisWeek}</strong>
         </article>
         <article className="summary-card">
           <span>Last Split</span>
@@ -779,14 +779,14 @@ function App() {
               </div>
               <div className="workout-insight-chip">
                 <span>This week</span>
-                <strong>{workoutsLastWeek}</strong>
+                <strong>{workoutsThisWeek}</strong>
               </div>
             </div>
 
             <div className="workout-stats-grid">
               <article className="workout-stat-card">
                 <span>Workouts This Week</span>
-                <strong>{workoutsLastWeek}</strong>
+                <strong>{workoutsThisWeek}</strong>
               </article>
               <article className="workout-stat-card">
                 <span>Workouts This Month</span>
