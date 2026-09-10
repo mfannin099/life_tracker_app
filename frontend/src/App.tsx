@@ -817,6 +817,7 @@ function App() {
               <option value="other">Other</option>
               <option value="biceps">Biceps</option>
               <option value="triceps">Triceps</option>
+              <option value="core">Core</option>
             </select>
             <label>Cardio Done?</label>
             <select value={workoutForm.cardio_done} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_done: e.target.value })}>
