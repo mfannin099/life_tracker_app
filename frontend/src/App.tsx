@@ -461,7 +461,6 @@ function App() {
                   <th>Name</th>
                   <th>Date</th>
                   <th>Weight (lbs)</th>
-                  <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
@@ -470,7 +469,6 @@ function App() {
                     <td>{entry.name}</td>
                     <td>{entry.date}</td>
                     <td>{entry.weight}</td>
-                    <td>{entry.created_at}</td>
                   </tr>
                 ))}
               </tbody>
@@ -683,7 +681,6 @@ function App() {
                   <th>Lift Split</th>
                   <th>Secondary</th>
                   <th>Cardio</th>
-                  <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
@@ -698,7 +695,6 @@ function App() {
                         ? `${entry.cardio_type ?? "cardio"} (${entry.cardio_distance_miles ?? "-"} mi / ${entry.cardio_duration_minutes ?? "-"} min)`
                         : "No"}
                     </td>
-                    <td>{entry.created_at}</td>
                   </tr>
                 ))}
               </tbody>
