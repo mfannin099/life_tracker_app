@@ -740,10 +740,16 @@ function App() {
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: "#f5f5f5", border: "1px solid #ccc", borderRadius: "4px" }}
-                    formatter={(value: number, _name, item) => [
-                      `${value} workout${value === 1 ? "" : "s"}${item.payload.isCurrentMonth ? " (partial month)" : ""}`,
-                      "Count",
-                    ]}
+                    formatter={(value, _name, item) => {
+                      const count = Number(value);
+                      const isCurrentMonth = Boolean(
+                        (item?.payload as MonthlyTrendBucket | undefined)?.isCurrentMonth,
+                      );
+                      return [
+                        `${count} workout${count === 1 ? "" : "s"}${isCurrentMonth ? " (partial month)" : ""}`,
+                        "Count",
+                      ];
+                    }}
                   />
                   <Bar dataKey="count" fill="#0891b2" radius={[4, 4, 0, 0]} maxBarSize={56} />
                 </BarChart>
