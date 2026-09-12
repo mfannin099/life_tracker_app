@@ -259,6 +259,26 @@ h3 {
   background: #dc2626;
 }
 
+.trend-change-positive {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.trend-change-negative {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.trend-change-neutral {
+  color: #64748b;
+}
+
+.trend-partial-note {
+  color: #64748b;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
 .focus-chip {
   padding: 12px;
   border-radius: 12px;

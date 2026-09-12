@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 type Weight = {
   id: number;
@@ -142,6 +142,51 @@ function calculateWorkoutStreaks(workouts: Workout[]) {
   }
 
   return { currentStreak, longestStreak };
+}
+
+type MonthlyTrendBucket = {
+  key: string;
+  label: string;
+  monthStart: Date;
+  monthEnd: Date;
+  count: number;
+  isCurrentMonth: boolean;
+};
+
+function buildMonthlyTrendBuckets(workouts: Workout[], now: Date): MonthlyTrendBucket[] {
+  const buckets: MonthlyTrendBucket[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const cursor = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const { start, end } = getMonthBounds(cursor);
+    buckets.push({
+      key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`,
+      label: formatMonthLabel(start),
+      monthStart: start,
+      monthEnd: end,
+      count: countWorkoutsInRange(workouts, start, end),
+      isCurrentMonth: i === 0,
+    });
+  }
+  return buckets;
+}
+
+function computeMonthOverMonthChange(buckets: MonthlyTrendBucket[]) {
+  return buckets.map((bucket, idx) => {
+    if (idx === 0) {
+      return { ...bucket, change: null as number | null, changeLabel: "—" };
+    }
+    const prev = buckets[idx - 1].count;
+    const curr = bucket.count;
+    if (prev === 0 && curr === 0) {
+      return { ...bucket, change: null as number | null, changeLabel: "—" };
+    }
+    if (prev === 0) {
+      return { ...bucket, change: null as number | null, changeLabel: "New" };
+    }
+    const pct = ((curr - prev) / prev) * 100;
+    const rounded = Math.round(pct);
+    return { ...bucket, change: pct, changeLabel: `${rounded > 0 ? "+" : ""}${rounded}%` };
+  });
 }
 
 function App() {
@@ -577,6 +622,9 @@ function App() {
       })
       .sort((a, b) => (b.daysAgo ?? Infinity) - (a.daysAgo ?? Infinity));
 
+    const monthlyTrendBuckets = buildMonthlyTrendBuckets(allWorkouts, now);
+    const monthlyTrendData = computeMonthOverMonthChange(monthlyTrendBuckets);
+
     return (
       <main>
         <header className="page-header">
@@ -671,6 +719,73 @@ function App() {
                 </table>
               </article>
             </div>
+          </section>
+          <section className="workout-analytics">
+            <div className="workout-analytics-header">
+              <div>
+                <span className="insights-kicker">Monthly Trends</span>
+                <h3 style={{ margin: "6px 0 0" }}>Workouts per month (last 6 months)</h3>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "14px", marginBottom: "20px" }}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={monthlyTrendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fontSize: 12 }}
+                    label={{ value: "Workouts", angle: -90, position: "insideLeft" }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#f5f5f5", border: "1px solid #ccc", borderRadius: "4px" }}
+                    formatter={(value: number, _name, item) => [
+                      `${value} workout${value === 1 ? "" : "s"}${item.payload.isCurrentMonth ? " (partial month)" : ""}`,
+                      "Count",
+                    ]}
+                  />
+                  <Bar dataKey="count" fill="#0891b2" radius={[4, 4, 0, 0]} maxBarSize={56} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <table className="recency-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Workouts</th>
+                  <th>vs Previous Month</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyTrendData.map((bucket) => (
+                  <tr key={bucket.key}>
+                    <td>
+                      {bucket.label}
+                      {bucket.isCurrentMonth ? " *" : ""}
+                    </td>
+                    <td>{bucket.count}</td>
+                    <td
+                      className={
+                        bucket.change === null
+                          ? "trend-change-neutral"
+                          : bucket.change > 0
+                            ? "trend-change-positive"
+                            : bucket.change < 0
+                              ? "trend-change-negative"
+                              : "trend-change-neutral"
+                      }
+                    >
+                      {bucket.changeLabel}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {monthlyTrendData.some((bucket) => bucket.isCurrentMonth) && (
+              <p className="trend-partial-note">* Current month in progress — count reflects data through today.</p>
+            )}
           </section>
           <div className="table-wrap">
             <table className="data-table">
