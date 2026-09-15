@@ -189,6 +189,74 @@ function computeMonthOverMonthChange(buckets: MonthlyTrendBucket[]) {
   });
 }
 
+type WeightMonthlyBucket = {
+  key: string;
+  label: string;
+  monthStart: Date;
+  monthEnd: Date;
+  value: number | null;
+  entryDate: string | null;
+  isCurrentMonth: boolean;
+};
+
+// The value for a month is whichever entry falls closest to (on or before)
+// the last day of that month, so a mid-month-only entry still counts.
+function getEndOfMonthWeight(
+  weights: Weight[],
+  name: string,
+  start: Date,
+  end: Date,
+): { value: number; date: string } | null {
+  const entries = weights.filter((w) => {
+    if (w.name !== name) return false;
+    const d = toDate(w.date);
+    return d >= start && d <= end;
+  });
+  if (entries.length === 0) return null;
+  entries.sort((a, b) => toSortableDate(b.date) - toSortableDate(a.date));
+  return { value: entries[0].weight, date: entries[0].date };
+}
+
+function buildWeightMonthlyBuckets(weights: Weight[], name: string, now: Date): WeightMonthlyBucket[] {
+  const buckets: WeightMonthlyBucket[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const cursor = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const { start, end } = getMonthBounds(cursor);
+    const endOfMonth = getEndOfMonthWeight(weights, name, start, end);
+    buckets.push({
+      key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`,
+      label: formatMonthLabel(start),
+      monthStart: start,
+      monthEnd: end,
+      value: endOfMonth?.value ?? null,
+      entryDate: endOfMonth?.date ?? null,
+      isCurrentMonth: i === 0,
+    });
+  }
+  return buckets;
+}
+
+function computeWeightMonthOverMonthChange(buckets: WeightMonthlyBucket[]) {
+  return buckets.map((bucket, idx) => {
+    if (idx === 0 || bucket.value === null) {
+      return { ...bucket, change: null as number | null, changeLabel: bucket.value === null ? "No data" : "—" };
+    }
+    const prev = buckets[idx - 1].value;
+    if (prev === null) {
+      return { ...bucket, change: null as number | null, changeLabel: "New" };
+    }
+    const diff = bucket.value - prev;
+    const pct = prev !== 0 ? (diff / prev) * 100 : 0;
+    const roundedDiff = Math.round(diff * 10) / 10;
+    const roundedPct = Math.round(pct * 10) / 10;
+    return {
+      ...bucket,
+      change: diff,
+      changeLabel: `${roundedDiff > 0 ? "+" : ""}${roundedDiff} lbs (${roundedPct > 0 ? "+" : ""}${roundedPct}%)`,
+    };
+  });
+}
+
 function App() {
   const [view, setView] = useState<"dashboard" | "all_weights" | "all_workouts">("dashboard");
   const [weights, setWeights] = useState<Weight[]>([]);
@@ -498,6 +566,69 @@ function App() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+
+          <section className="workout-analytics">
+            <div className="workout-analytics-header">
+              <div>
+                <span className="insights-kicker">Monthly Trends</span>
+                <h3 style={{ margin: "6px 0 0" }}>Weight change per month (last 6 months)</h3>
+              </div>
+            </div>
+
+            <div className="workout-analytics-grid">
+              {userNames.map((userName) => {
+                const buckets = buildWeightMonthlyBuckets(allWeights, userName, now);
+                const trendData = computeWeightMonthOverMonthChange(buckets);
+                return (
+                  <article className="analytics-panel analytics-panel-wide" key={userName}>
+                    <div className="analytics-panel-title">
+                      <h4>{userName}</h4>
+                      <span>End-of-month weight vs previous month</span>
+                    </div>
+                    <table className="recency-table">
+                      <thead>
+                        <tr>
+                          <th>Month</th>
+                          <th>Weight (lbs)</th>
+                          <th>vs Previous Month</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trendData.map((bucket) => (
+                          <tr key={bucket.key}>
+                            <td>
+                              {bucket.label}
+                              {bucket.isCurrentMonth ? " *" : ""}
+                            </td>
+                            <td>{bucket.value !== null ? bucket.value.toFixed(1) : "—"}</td>
+                            <td
+                              className={
+                                bucket.change === null
+                                  ? "trend-change-neutral"
+                                  : bucket.change > 0
+                                    ? "trend-change-positive"
+                                    : bucket.change < 0
+                                      ? "trend-change-negative"
+                                      : "trend-change-neutral"
+                              }
+                            >
+                              {bucket.changeLabel}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </article>
+                );
+              })}
+            </div>
+            {userNames.length > 0 && (
+              <p className="trend-partial-note">
+                * Current month in progress — weight reflects the most recent entry through today, not a full
+                month-end value.
+              </p>
+            )}
+          </section>
 
           <div className="table-wrap">
             <table className="data-table">
