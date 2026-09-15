@@ -1146,6 +1146,7 @@ function App() {
               <option value="biking">Biking</option>
               <option value="swimming">Swimming</option>
               <option value="sports">Sports</option>
+              <option value="stair_master">Stair Master</option>
               <option value="other">Other</option>
             </select>
             <label>Cardio Distance (miles)</label>
