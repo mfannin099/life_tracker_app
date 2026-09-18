@@ -92,10 +92,6 @@ function buildMonthGrid(date: Date) {
   return cells;
 }
 
-function uniqueWorkoutDates(workouts: Workout[]): Set<string> {
-  return new Set(workouts.map((workout) => workout.date));
-}
-
 type WorkoutDayInfo = { lift: boolean; cardio: boolean };
 
 function buildWorkoutDayInfo(workouts: Workout[]): Map<string, WorkoutDayInfo> {
