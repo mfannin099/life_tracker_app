@@ -499,6 +499,40 @@ h3 {
   color: #64748b;
 }
 
+.legend-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 18px;
+  position: relative;
+}
+
+.legend-swatch::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.legend-swatch-lift::before {
+  background: linear-gradient(160deg, rgba(37, 99, 235, 0.4), rgba(8, 145, 178, 0.6));
+}
+
+.legend-swatch-cardio::before {
+  background: linear-gradient(160deg, rgba(249, 115, 22, 0.45), rgba(234, 88, 12, 0.6));
+}
+
+.legend-swatch-split::before {
+  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.55) 50%, rgba(37, 99, 235, 0.55) 50%);
+}
+
+.legend-swatch-inactive::before {
+  background: rgba(241, 245, 249, 0.95);
+  box-shadow: inset 0 0 0 1px #cbd5e1;
+}
+
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
@@ -536,6 +570,24 @@ h3 {
 
 .calendar-cell-active {
   background: linear-gradient(160deg, rgba(37, 99, 235, 0.16), rgba(8, 145, 178, 0.34));
+  color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+}
+
+.calendar-cell-cardio {
+  background: linear-gradient(160deg, rgba(249, 115, 22, 0.18), rgba(234, 88, 12, 0.34));
+  color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.2);
+}
+
+.calendar-cell-split {
+  background: linear-gradient(
+    to bottom,
+    rgba(249, 115, 22, 0.32) 0%,
+    rgba(249, 115, 22, 0.32) 50%,
+    rgba(37, 99, 235, 0.28) 50%,
+    rgba(37, 99, 235, 0.28) 100%
+  );
   color: #0f172a;
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
 }

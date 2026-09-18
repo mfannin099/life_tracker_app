@@ -96,6 +96,23 @@ function uniqueWorkoutDates(workouts: Workout[]): Set<string> {
   return new Set(workouts.map((workout) => workout.date));
 }
 
+type WorkoutDayInfo = { lift: boolean; cardio: boolean };
+
+function buildWorkoutDayInfo(workouts: Workout[]): Map<string, WorkoutDayInfo> {
+  const map = new Map<string, WorkoutDayInfo>();
+  workouts.forEach((workout) => {
+    const info = map.get(workout.date) ?? { lift: false, cardio: false };
+    if (workout.lift_split !== "rest") {
+      info.lift = true;
+    }
+    if (workout.cardio_done) {
+      info.cardio = true;
+    }
+    map.set(workout.date, info);
+  });
+  return map;
+}
+
 function countWorkoutsInRange(workouts: Workout[], start: Date, end: Date): number {
   return workouts.filter((workout) => {
     const workoutDate = toDate(workout.date);
@@ -438,7 +455,7 @@ function App() {
   const workoutsThisMonth = countWorkoutsInRange(workouts, currentMonthStart, currentMonthEnd);
   const workoutStreaks = calculateWorkoutStreaks(workouts);
   const monthGrid = buildMonthGrid(now);
-  const workoutDatesThisMonth = uniqueWorkoutDates(
+  const workoutDayInfoThisMonth = buildWorkoutDayInfo(
     workouts.filter((workout) => {
       const workoutDate = toDate(workout.date);
       return workoutDate >= currentMonthStart && workoutDate <= currentMonthEnd;
@@ -1056,8 +1073,10 @@ function App() {
 
             <div className="workout-heatmap">
               <div className="workout-heatmap-legend">
-                <span>0 = no workout</span>
-                <span>1 = workout present</span>
+                <span className="legend-swatch legend-swatch-lift">Lift</span>
+                <span className="legend-swatch legend-swatch-cardio">Cardio</span>
+                <span className="legend-swatch legend-swatch-split">Lift + Cardio</span>
+                <span className="legend-swatch legend-swatch-inactive">Rest / none</span>
               </div>
               <div className="calendar-weekdays" aria-hidden="true">
                 <span>Sun</span>
@@ -1077,25 +1096,35 @@ function App() {
                   const dayKey = `${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(
                     cell.date.getDate(),
                   ).padStart(2, "0")}-${cell.date.getFullYear()}`;
-                  const hasWorkout = workoutDatesThisMonth.has(dayKey);
+                  const dayInfo = workoutDayInfoThisMonth.get(dayKey);
+                  const hasLift = dayInfo?.lift ?? false;
+                  const hasCardio = dayInfo?.cardio ?? false;
                   const isToday = cell.date.toDateString() === now.toDateString();
+
+                  let statusClass = "calendar-cell-inactive";
+                  let statusLabel = "rest / no activity";
+                  if (hasLift && hasCardio) {
+                    statusClass = "calendar-cell-split";
+                    statusLabel = "lift + cardio";
+                  } else if (hasLift) {
+                    statusClass = "calendar-cell-active";
+                    statusLabel = "lift workout";
+                  } else if (hasCardio) {
+                    statusClass = "calendar-cell-cardio";
+                    statusLabel = "cardio only";
+                  }
 
                   return (
                     <div
-                      className={[
-                        "calendar-cell",
-                        hasWorkout ? "calendar-cell-active" : "calendar-cell-inactive",
-                        isToday ? "calendar-cell-today" : "",
-                      ]
+                      className={["calendar-cell", statusClass, isToday ? "calendar-cell-today" : ""]
                         .filter(Boolean)
                         .join(" ")}
                       key={cell.key}
                       role="gridcell"
-                      aria-label={`${formatCalendarDay(cell.date)}: ${hasWorkout ? "workout present" : "no workout"}`}
-                      title={`${formatCalendarDay(cell.date)}: ${hasWorkout ? "workout present" : "no workout"}`}
+                      aria-label={`${formatCalendarDay(cell.date)}: ${statusLabel}`}
+                      title={`${formatCalendarDay(cell.date)}: ${statusLabel}`}
                     >
                       <span className="calendar-day-number">{formatCalendarDay(cell.date)}</span>
-                      <strong>{hasWorkout ? "1" : "0"}</strong>
                     </div>
                   );
                 })}
