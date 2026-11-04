@@ -116,6 +116,13 @@ function countWorkoutsInRange(workouts: Workout[], start: Date, end: Date): numb
   }).length;
 }
 
+function countLiftsInRange(workouts: Workout[], start: Date, end: Date): number {
+  return workouts.filter((workout) => {
+    const workoutDate = toDate(workout.date);
+    return workoutDate >= start && workoutDate <= end && workout.lift_split !== "rest";
+  }).length;
+}
+
 function calculateWorkoutStreaks(workouts: Workout[]) {
   const workoutDates = new Set(
     workouts.map((workout) => {
@@ -279,6 +286,8 @@ function App() {
   const [weightSuccess, setWeightSuccess] = useState("");
   const [workoutSuccess, setWorkoutSuccess] = useState("");
   const [weightsPage, setWeightsPage] = useState(0);
+  const [workoutsPage, setWorkoutsPage] = useState(0);
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
 
   const STORED_NAME_KEY = "fitnessTracker.name";
   const getStoredName = () => localStorage.getItem(STORED_NAME_KEY) ?? "";
@@ -316,6 +325,7 @@ function App() {
     const data = await response.json();
     const normalized = (data.workouts ?? []).map((w: Workout) => ({ ...w, name: (w.name ?? "").trim() }));
     setWorkouts(normalized);
+    setWorkoutsPage(0);
   }
 
   async function onWeightSubmit(e: FormEvent) {
@@ -450,13 +460,74 @@ function App() {
   const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   const workoutsThisMonth = countWorkoutsInRange(workouts, currentMonthStart, currentMonthEnd);
   const workoutStreaks = calculateWorkoutStreaks(workouts);
-  const monthGrid = buildMonthGrid(now);
-  const workoutDayInfoThisMonth = buildWorkoutDayInfo(
-    workouts.filter((workout) => {
-      const workoutDate = toDate(workout.date);
-      return workoutDate >= currentMonthStart && workoutDate <= currentMonthEnd;
-    }),
-  );
+
+  function renderMonthCalendar(monthDate: Date, workoutsForMonth: Workout[]) {
+    const grid = buildMonthGrid(monthDate);
+    const dayInfo = buildWorkoutDayInfo(workoutsForMonth);
+    const monthLabel = formatMonthLabel(monthDate);
+
+    return (
+      <div className="workout-heatmap">
+        <div className="workout-heatmap-legend">
+          <span className="legend-swatch legend-swatch-lift">Lift</span>
+          <span className="legend-swatch legend-swatch-cardio">Cardio</span>
+          <span className="legend-swatch legend-swatch-split">Lift + Cardio</span>
+          <span className="legend-swatch legend-swatch-inactive">Rest / none</span>
+        </div>
+        <div className="calendar-weekdays" aria-hidden="true">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+        <div className="calendar-grid" role="grid" aria-label={`Workout heatmap for ${monthLabel}`}>
+          {grid.map((cell) => {
+            if (!cell.date) {
+              return <div className="calendar-cell calendar-cell-empty" key={cell.key} aria-hidden="true" />;
+            }
+
+            const dayKey = `${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(
+              cell.date.getDate(),
+            ).padStart(2, "0")}-${cell.date.getFullYear()}`;
+            const info = dayInfo.get(dayKey);
+            const hasLift = info?.lift ?? false;
+            const hasCardio = info?.cardio ?? false;
+            const isToday = cell.date.toDateString() === now.toDateString();
+
+            let statusClass = "calendar-cell-inactive";
+            let statusLabel = "rest / no activity";
+            if (hasLift && hasCardio) {
+              statusClass = "calendar-cell-split";
+              statusLabel = "lift + cardio";
+            } else if (hasLift) {
+              statusClass = "calendar-cell-active";
+              statusLabel = "lift workout";
+            } else if (hasCardio) {
+              statusClass = "calendar-cell-cardio";
+              statusLabel = "cardio only";
+            }
+
+            return (
+              <div
+                className={["calendar-cell", statusClass, isToday ? "calendar-cell-today" : ""]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={cell.key}
+                role="gridcell"
+                aria-label={`${formatCalendarDay(cell.date)}: ${statusLabel}`}
+                title={`${formatCalendarDay(cell.date)}: ${statusLabel}`}
+              >
+                <span className="calendar-day-number">{formatCalendarDay(cell.date)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   if (view === "all_weights") {
     const itemsPerPage = 15;
@@ -769,6 +840,10 @@ function App() {
     const monthlyTrendBuckets = buildMonthlyTrendBuckets(allWorkouts, now);
     const monthlyTrendData = computeMonthOverMonthChange(monthlyTrendBuckets);
 
+    const itemsPerPage = 15;
+    const totalWorkoutPages = Math.ceil(allWorkouts.length / itemsPerPage);
+    const paginatedWorkouts = allWorkouts.slice(workoutsPage * itemsPerPage, (workoutsPage + 1) * itemsPerPage);
+
     return (
       <main>
         <header className="page-header">
@@ -937,6 +1012,42 @@ function App() {
               <p className="trend-partial-note">* Current month in progress — count reflects data through today.</p>
             )}
           </section>
+          <section className="workout-month-breakdown">
+            {monthlyTrendBuckets.map((bucket) => {
+              const liftCount = countLiftsInRange(allWorkouts, bucket.monthStart, bucket.monthEnd);
+              const isOpen = expandedMonth === bucket.key;
+              return (
+                <div className="month-accordion-item" key={bucket.key}>
+                  <button
+                    type="button"
+                    className="month-accordion-header"
+                    onClick={() => setExpandedMonth(isOpen ? null : bucket.key)}
+                    aria-expanded={isOpen}
+                  >
+                    <span>
+                      {bucket.label}
+                      {bucket.isCurrentMonth ? " *" : ""}
+                    </span>
+                    <span>
+                      {liftCount} lift{liftCount === 1 ? "" : "s"}
+                    </span>
+                    <span className="month-accordion-chevron">{isOpen ? "−" : "+"}</span>
+                  </button>
+                  {isOpen && (
+                    <div className="month-accordion-body">
+                      {renderMonthCalendar(
+                        bucket.monthStart,
+                        allWorkouts.filter((w) => {
+                          const d = toDate(w.date);
+                          return d >= bucket.monthStart && d <= bucket.monthEnd;
+                        }),
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -949,7 +1060,7 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {allWorkouts.map((entry) => (
+                {paginatedWorkouts.map((entry) => (
                   <tr key={entry.id}>
                     <td>{entry.name}</td>
                     <td>{entry.date}</td>
@@ -964,6 +1075,28 @@ function App() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div style={{ marginTop: "20px", display: "flex", gap: "10px", justifyContent: "center", alignItems: "center" }}>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setWorkoutsPage(Math.max(0, workoutsPage - 1))}
+              disabled={workoutsPage === 0}
+            >
+              ← Previous
+            </button>
+            <span style={{ margin: "0 10px", fontSize: "0.9rem" }}>
+              Page {workoutsPage + 1} of {totalWorkoutPages}
+            </span>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => setWorkoutsPage(Math.min(totalWorkoutPages - 1, workoutsPage + 1))}
+              disabled={workoutsPage >= totalWorkoutPages - 1}
+            >
+              Next →
+            </button>
           </div>
         </section>
       </main>
@@ -1067,65 +1200,13 @@ function App() {
               </article>
             </div>
 
-            <div className="workout-heatmap">
-              <div className="workout-heatmap-legend">
-                <span className="legend-swatch legend-swatch-lift">Lift</span>
-                <span className="legend-swatch legend-swatch-cardio">Cardio</span>
-                <span className="legend-swatch legend-swatch-split">Lift + Cardio</span>
-                <span className="legend-swatch legend-swatch-inactive">Rest / none</span>
-              </div>
-              <div className="calendar-weekdays" aria-hidden="true">
-                <span>Sun</span>
-                <span>Mon</span>
-                <span>Tue</span>
-                <span>Wed</span>
-                <span>Thu</span>
-                <span>Fri</span>
-                <span>Sat</span>
-              </div>
-              <div className="calendar-grid" role="grid" aria-label={`Workout heatmap for ${formatMonthLabel(now)}`}>
-                {monthGrid.map((cell) => {
-                  if (!cell.date) {
-                    return <div className="calendar-cell calendar-cell-empty" key={cell.key} aria-hidden="true" />;
-                  }
-
-                  const dayKey = `${String(cell.date.getMonth() + 1).padStart(2, "0")}-${String(
-                    cell.date.getDate(),
-                  ).padStart(2, "0")}-${cell.date.getFullYear()}`;
-                  const dayInfo = workoutDayInfoThisMonth.get(dayKey);
-                  const hasLift = dayInfo?.lift ?? false;
-                  const hasCardio = dayInfo?.cardio ?? false;
-                  const isToday = cell.date.toDateString() === now.toDateString();
-
-                  let statusClass = "calendar-cell-inactive";
-                  let statusLabel = "rest / no activity";
-                  if (hasLift && hasCardio) {
-                    statusClass = "calendar-cell-split";
-                    statusLabel = "lift + cardio";
-                  } else if (hasLift) {
-                    statusClass = "calendar-cell-active";
-                    statusLabel = "lift workout";
-                  } else if (hasCardio) {
-                    statusClass = "calendar-cell-cardio";
-                    statusLabel = "cardio only";
-                  }
-
-                  return (
-                    <div
-                      className={["calendar-cell", statusClass, isToday ? "calendar-cell-today" : ""]
-                        .filter(Boolean)
-                        .join(" ")}
-                      key={cell.key}
-                      role="gridcell"
-                      aria-label={`${formatCalendarDay(cell.date)}: ${statusLabel}`}
-                      title={`${formatCalendarDay(cell.date)}: ${statusLabel}`}
-                    >
-                      <span className="calendar-day-number">{formatCalendarDay(cell.date)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {renderMonthCalendar(
+              now,
+              workouts.filter((workout) => {
+                const workoutDate = toDate(workout.date);
+                return workoutDate >= currentMonthStart && workoutDate <= currentMonthEnd;
+              }),
+            )}
           </section>
           <form onSubmit={onWorkoutSubmit}>
             <label>Name</label>
