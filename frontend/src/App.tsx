@@ -53,10 +53,10 @@ function formatExerciseSummary(exercise: WorkoutExercise): string {
   const sameWeight = sets.every((s) => s.weight === sets[0].weight);
   if (sameReps && sameWeight) {
     const weightLabel = sets[0].weight != null ? ` @ ${sets[0].weight} lb` : "";
-    return `${exercise.exercise_name} — ${sets.length}×${sets[0].reps}${weightLabel}`;
+    return `${exercise.exercise_name} — ${sets.length} sets × ${sets[0].reps} reps${weightLabel}`;
   }
   const setsLabel = sets
-    .map((s) => (s.weight != null ? `${s.reps}@${s.weight}` : `${s.reps}`))
+    .map((s) => (s.weight != null ? `${s.reps} reps @ ${s.weight} lb` : `${s.reps} reps`))
     .join(", ");
   return `${exercise.exercise_name} — ${setsLabel}`;
 }
@@ -351,6 +351,8 @@ function App() {
   const [workoutForm, setWorkoutForm] = useState(resetWorkoutForm());
   const [draftExercises, setDraftExercises] = useState<DraftExercise[]>([]);
   const [exerciseInput, setExerciseInput] = useState<DraftExercise>(emptyDraftExercise());
+  const [confirmDeleteWeightId, setConfirmDeleteWeightId] = useState<number | null>(null);
+  const [confirmDeleteWorkoutId, setConfirmDeleteWorkoutId] = useState<number | null>(null);
 
   function addDraftExercise() {
     if (!exerciseInput.name.trim()) return;
@@ -407,9 +409,7 @@ function App() {
   }
 
   async function deleteWeight(id: number) {
-    if (!window.confirm("Delete this weight entry? This cannot be undone.")) {
-      return;
-    }
+    setConfirmDeleteWeightId(null);
     await fetch(`${API_BASE}/weights/${id}`, { method: "DELETE" });
     await loadWeights();
   }
@@ -467,9 +467,7 @@ function App() {
   }
 
   async function deleteWorkout(id: number) {
-    if (!window.confirm("Delete this workout entry? This cannot be undone.")) {
-      return;
-    }
+    setConfirmDeleteWorkoutId(null);
     await fetch(`${API_BASE}/workouts/${id}`, { method: "DELETE" });
     await loadWorkouts();
   }
@@ -1229,15 +1227,27 @@ function App() {
                 <span>{entry.date}</span>
               </div>
               <p>{entry.weight} lbs</p>
-              <button
-                type="button"
-                className="danger"
-                onClick={() => {
-                  void deleteWeight(entry.id);
-                }}
-              >
-                Delete
-              </button>
+              {confirmDeleteWeightId === entry.id ? (
+                <div className="confirm-delete">
+                  <span>Delete this entry?</span>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      void deleteWeight(entry.id);
+                    }}
+                  >
+                    Confirm
+                  </button>
+                  <button type="button" className="ghost" onClick={() => setConfirmDeleteWeightId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="danger" onClick={() => setConfirmDeleteWeightId(entry.id)}>
+                  Delete
+                </button>
+              )}
             </div>
           ))}
         </section>
@@ -1344,7 +1354,7 @@ function App() {
                 {draftExercises.map((ex, i) => (
                   <li key={i}>
                     <span>
-                      {ex.name} — {ex.sets}×{ex.reps}
+                      {ex.name} — {ex.sets} sets × {ex.reps} reps
                       {ex.weight ? ` @ ${ex.weight} lb` : ""}
                     </span>
                     <button type="button" className="ghost" onClick={() => removeDraftExercise(i)}>
@@ -1411,15 +1421,27 @@ function App() {
                   </ul>
                 </details>
               ) : null}
-              <button
-                type="button"
-                className="danger"
-                onClick={() => {
-                  void deleteWorkout(workout.id);
-                }}
-              >
-                Delete
-              </button>
+              {confirmDeleteWorkoutId === workout.id ? (
+                <div className="confirm-delete">
+                  <span>Delete this entry?</span>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      void deleteWorkout(workout.id);
+                    }}
+                  >
+                    Confirm
+                  </button>
+                  <button type="button" className="ghost" onClick={() => setConfirmDeleteWorkoutId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="danger" onClick={() => setConfirmDeleteWorkoutId(workout.id)}>
+                  Delete
+                </button>
+              )}
             </div>
           ))}
         </section>

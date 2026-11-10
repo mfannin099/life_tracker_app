@@ -793,6 +793,26 @@ button:disabled:hover {
   }
 }
 
+.confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.confirm-delete span {
+  font-size: 0.86rem;
+  color: #334155;
+  flex: 1 1 100%;
+}
+
+.confirm-delete button {
+  width: auto;
+  margin-top: 0;
+  flex: 1;
+}
+
 .exercise-draft-list {
   list-style: none;
   margin: 7px 0 0;
