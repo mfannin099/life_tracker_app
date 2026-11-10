@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 type Weight = {
@@ -315,8 +315,62 @@ function computeWeightMonthOverMonthChange(buckets: WeightMonthlyBucket[]) {
   });
 }
 
+type AppView = "dashboard" | "all_weights" | "all_workouts";
+
+function BottomNav({ view, setView }: { view: AppView; setView: (view: AppView) => void }) {
+  const tabs: { key: AppView; label: string; icon: ReactNode }[] = [
+    {
+      key: "dashboard",
+      label: "Home",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 11.5 12 4l9 7.5" />
+          <path d="M5.5 10v9a1 1 0 0 0 1 1h4v-5.5h3V20h4a1 1 0 0 0 1-1v-9" />
+        </svg>
+      ),
+    },
+    {
+      key: "all_weights",
+      label: "Weight",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M12 8.5v4l2.6 1.6" />
+        </svg>
+      ),
+    },
+    {
+      key: "all_workouts",
+      label: "Workouts",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6.5 7v10M17.5 7v10" />
+          <path d="M3.5 10v4M20.5 10v4" />
+          <path d="M6.5 12h11" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <nav className="bottom-nav">
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          className={`bottom-nav-item${view === tab.key ? " active" : ""}`}
+          onClick={() => setView(tab.key)}
+        >
+          {tab.icon}
+          <span>{tab.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 function App() {
-  const [view, setView] = useState<"dashboard" | "all_weights" | "all_workouts">("dashboard");
+  const [view, setView] = useState<AppView>("dashboard");
   const [weights, setWeights] = useState<Weight[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weightError, setWeightError] = useState("");
@@ -611,7 +665,7 @@ function App() {
     
     // Get unique user names BEFORE using them in calculations
     const userNames = Array.from(new Set(allWeights.map((w) => w.name)));
-    const colors = ["#0891b2", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#16a34a"];
+    const colors = ["#38bdf8", "#818cf8", "#c084fc", "#f472b6", "#fb923c", "#4ade80"];
 
     // Compute per-date average weight and 7-day moving average
     try {
@@ -642,6 +696,7 @@ function App() {
 
     return (
       <main>
+        <BottomNav view={view} setView={setView} />
         <header className="page-header">
           <h1>All Weight Entries</h1>
           <p>Complete history of recorded weights.</p>
@@ -655,21 +710,24 @@ function App() {
             <h3 style={{ marginTop: 0 }}>Weight Trend</h3>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 13 }}
+                <CartesianGrid strokeDasharray="3 3" stroke="#333338" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 13, fill: "#a8a8af" }}
                   angle={-45}
                   textAnchor="end"
                   height={80}
+                  stroke="#333338"
                 />
-                <YAxis 
+                <YAxis
                   domain={['dataMin - 5', 'dataMax + 5']}
-                  tick={{ fontSize: 12 }}
-                  label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft' }}
+                  tick={{ fontSize: 12, fill: "#a8a8af" }}
+                  stroke="#333338"
+                  label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft', fill: "#a8a8af" }}
                 />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px' }}
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#212124', border: '1px solid #333338', borderRadius: '10px', color: '#f4f4f5' }}
+                  labelStyle={{ color: '#f4f4f5' }}
                   formatter={(value) => {
                     const numericValue =
                       typeof value === "number"
@@ -680,8 +738,8 @@ function App() {
                     return numericValue !== null ? numericValue.toFixed(1) : "-";
                   }}
                 />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '20px' }}
+                <Legend
+                  wrapperStyle={{ paddingTop: '20px', color: '#a8a8af' }}
                   iconType="line"
                 />
                 {userNames.map((userName, idx) => (
@@ -905,6 +963,7 @@ function App() {
 
     return (
       <main>
+        <BottomNav view={view} setView={setView} />
         <header className="page-header">
           <h1>All Workout Entries</h1>
           <p>Complete history of recorded workouts.</p>
@@ -1009,15 +1068,17 @@ function App() {
             <div style={{ marginTop: "14px", marginBottom: "20px" }}>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyTrendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333338" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#a8a8af" }} stroke="#333338" />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fontSize: 12 }}
-                    label={{ value: "Workouts", angle: -90, position: "insideLeft" }}
+                    tick={{ fontSize: 12, fill: "#a8a8af" }}
+                    stroke="#333338"
+                    label={{ value: "Workouts", angle: -90, position: "insideLeft", fill: "#a8a8af" }}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#f5f5f5", border: "1px solid #ccc", borderRadius: "4px" }}
+                    contentStyle={{ backgroundColor: "#212124", border: "1px solid #333338", borderRadius: "10px", color: "#f4f4f5" }}
+                    labelStyle={{ color: "#f4f4f5" }}
                     formatter={(value, _name, item) => {
                       const count = Number(value);
                       const isCurrentMonth = Boolean(
@@ -1029,7 +1090,7 @@ function App() {
                       ];
                     }}
                   />
-                  <Bar dataKey="count" fill="#0891b2" radius={[4, 4, 0, 0]} maxBarSize={56} />
+                  <Bar dataKey="count" fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={56} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1181,6 +1242,7 @@ function App() {
 
   return (
     <main>
+      <BottomNav view={view} setView={setView} />
       <header className="page-header">
         <h1>Fitness Tracker</h1>
         <p>Track your weight and workouts with a cleaner daily flow.</p>
