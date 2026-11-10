@@ -793,6 +793,48 @@ button:disabled:hover {
   }
 }
 
+.exercise-draft-list {
+  list-style: none;
+  margin: 7px 0 0;
+  padding: 0;
+}
+
+.exercise-draft-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+  background: #f8fafc;
+}
+
+.exercise-draft-list button {
+  width: auto;
+  margin-top: 0;
+  padding: 2px 8px;
+}
+
+.exercise-summary {
+  margin-top: 8px;
+  font-size: 0.86rem;
+}
+
+.exercise-summary summary {
+  cursor: pointer;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+.exercise-summary ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #334155;
+}
+
 .ghost {
   background: #ffffff;
   color: #1d4ed8;
