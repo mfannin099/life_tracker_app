@@ -1426,30 +1426,32 @@ function App() {
                 ))}
               </ul>
             ) : null}
+            <label>Exercise Name</label>
             <input
-              placeholder="Exercise name (e.g. Bench Press)"
+              placeholder="e.g. Bench Press"
               value={exerciseInput.name}
               onChange={(e) => setExerciseInput({ ...exerciseInput, name: e.target.value })}
             />
+            <label>Sets</label>
             <input
               type="number"
               min="1"
-              placeholder="Sets"
               value={exerciseInput.sets}
               onChange={(e) => setExerciseInput({ ...exerciseInput, sets: e.target.value })}
             />
+            <label>Reps</label>
             <input
               type="number"
               min="1"
-              placeholder="Reps"
               value={exerciseInput.reps}
               onChange={(e) => setExerciseInput({ ...exerciseInput, reps: e.target.value })}
             />
+            <label>Weight (lb, optional)</label>
             <input
               type="number"
               step="0.5"
               min="0"
-              placeholder="Weight (lb, optional)"
+              placeholder="Optional"
               value={exerciseInput.weight}
               onChange={(e) => setExerciseInput({ ...exerciseInput, weight: e.target.value })}
             />
