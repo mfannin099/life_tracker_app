@@ -105,6 +105,21 @@ class WeightEntry(BaseModel):
         return round(v, 1)
 
 
+class ExerciseSetEntry(BaseModel):
+    reps: int = Field(..., ge=1)
+    weight: float | None = Field(default=None, ge=0)
+
+
+class WorkoutExerciseEntry(BaseModel):
+    exercise_name: str = Field(..., min_length=1)
+    sets: list[ExerciseSetEntry] = Field(default_factory=list)
+
+    @field_validator("exercise_name")
+    @classmethod
+    def normalize_exercise_name(cls, v: str) -> str:
+        return v.strip()
+
+
 class WorkoutEntry(BaseModel):
     name: str = Field(..., description="User name", min_length=1)
     date: str = Field(..., description="Date in mm-dd-yyyy format")
@@ -114,6 +129,7 @@ class WorkoutEntry(BaseModel):
     cardio_type: str | None = Field(default=None, description="e.g. running, cycling")
     cardio_distance_miles: float | None = Field(default=None, ge=0)
     cardio_duration_minutes: int | None = Field(default=None, ge=0)
+    exercises: list[WorkoutExerciseEntry] = Field(default_factory=list, description="Exercises logged for this workout")
 
     @field_validator("date")
     @classmethod
@@ -250,6 +266,7 @@ async def add_workout(request: Request):
             entry.cardio_type,
             entry.cardio_distance_miles,
             entry.cardio_duration_minutes,
+            [exercise.model_dump() for exercise in entry.exercises],
         )
 
         # Browser form submissions should return to home instead of raw JSON.
@@ -294,6 +311,7 @@ def edit_workout(workout_id: int, entry: WorkoutEntry):
             entry.cardio_type,
             entry.cardio_distance_miles,
             entry.cardio_duration_minutes,
+            [exercise.model_dump() for exercise in entry.exercises],
         )
         if not updated:
             raise HTTPException(status_code=404, detail="Workout entry not found")

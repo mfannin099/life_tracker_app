@@ -10,6 +10,20 @@ type Weight = {
   created_at: string;
 };
 
+type ExerciseSet = {
+  id: number;
+  set_number: number;
+  reps: number;
+  weight: number | null;
+};
+
+type WorkoutExercise = {
+  id: number;
+  exercise_name: string;
+  sort_order: number;
+  sets: ExerciseSet[];
+};
+
 type Workout = {
   id: number;
   name: string;
@@ -21,7 +35,31 @@ type Workout = {
   cardio_distance_miles: number | null;
   cardio_duration_minutes: number | null;
   created_at: string;
+  exercises: WorkoutExercise[];
 };
+
+type DraftExercise = { name: string; sets: string; reps: string; weight: string };
+
+function emptyDraftExercise(): DraftExercise {
+  return { name: "", sets: "3", reps: "10", weight: "" };
+}
+
+function formatExerciseSummary(exercise: WorkoutExercise): string {
+  const sets = exercise.sets;
+  if (sets.length === 0) {
+    return exercise.exercise_name;
+  }
+  const sameReps = sets.every((s) => s.reps === sets[0].reps);
+  const sameWeight = sets.every((s) => s.weight === sets[0].weight);
+  if (sameReps && sameWeight) {
+    const weightLabel = sets[0].weight != null ? ` @ ${sets[0].weight} lb` : "";
+    return `${exercise.exercise_name} — ${sets.length} sets × ${sets[0].reps} reps${weightLabel}`;
+  }
+  const setsLabel = sets
+    .map((s) => (s.weight != null ? `${s.reps} reps @ ${s.weight} lb` : `${s.reps} reps`))
+    .join(", ");
+  return `${exercise.exercise_name} — ${setsLabel}`;
+}
 
 type WeightChartRow = {
   date: string;
@@ -311,6 +349,20 @@ function App() {
 
   const [weightForm, setWeightForm] = useState(resetWeightForm());
   const [workoutForm, setWorkoutForm] = useState(resetWorkoutForm());
+  const [draftExercises, setDraftExercises] = useState<DraftExercise[]>([]);
+  const [exerciseInput, setExerciseInput] = useState<DraftExercise>(emptyDraftExercise());
+  const [confirmDeleteWeightId, setConfirmDeleteWeightId] = useState<number | null>(null);
+  const [confirmDeleteWorkoutId, setConfirmDeleteWorkoutId] = useState<number | null>(null);
+
+  function addDraftExercise() {
+    if (!exerciseInput.name.trim()) return;
+    setDraftExercises([...draftExercises, exerciseInput]);
+    setExerciseInput(emptyDraftExercise());
+  }
+
+  function removeDraftExercise(index: number) {
+    setDraftExercises(draftExercises.filter((_, i) => i !== index));
+  }
 
   async function loadWeights() {
     const response = await fetch(`${API_BASE}/weights`);
@@ -357,9 +409,7 @@ function App() {
   }
 
   async function deleteWeight(id: number) {
-    if (!window.confirm("Delete this weight entry? This cannot be undone.")) {
-      return;
-    }
+    setConfirmDeleteWeightId(null);
     await fetch(`${API_BASE}/weights/${id}`, { method: "DELETE" });
     await loadWeights();
   }
@@ -389,6 +439,15 @@ function App() {
             cardioDone && workoutForm.cardio_duration_minutes
               ? Number(workoutForm.cardio_duration_minutes)
               : null,
+          exercises: draftExercises.map((draft) => {
+            const setCount = Math.max(1, Number(draft.sets) || 1);
+            const reps = Number(draft.reps) || 0;
+            const weight = draft.weight ? Number(draft.weight) : null;
+            return {
+              exercise_name: draft.name,
+              sets: Array.from({ length: setCount }, () => ({ reps, weight })),
+            };
+          }),
         }),
       });
       if (!response.ok) {
@@ -399,6 +458,8 @@ function App() {
       setWorkoutSuccess(`✓ Workout logged for ${workoutForm.name}!`);
       rememberName(workoutForm.name);
       setWorkoutForm(resetWorkoutForm());
+      setDraftExercises([]);
+      setExerciseInput(emptyDraftExercise());
       await loadWorkouts();
     } catch (err) {
       setWorkoutError(`Failed to add workout: ${err instanceof Error ? err.message : String(err)}`);
@@ -406,9 +467,7 @@ function App() {
   }
 
   async function deleteWorkout(id: number) {
-    if (!window.confirm("Delete this workout entry? This cannot be undone.")) {
-      return;
-    }
+    setConfirmDeleteWorkoutId(null);
     await fetch(`${API_BASE}/workouts/${id}`, { method: "DELETE" });
     await loadWorkouts();
   }
@@ -1057,6 +1116,7 @@ function App() {
                   <th>Lift Split</th>
                   <th>Secondary</th>
                   <th>Cardio</th>
+                  <th>Exercises</th>
                 </tr>
               </thead>
               <tbody>
@@ -1070,6 +1130,22 @@ function App() {
                       {entry.cardio_done
                         ? `${entry.cardio_type ?? "cardio"} (${entry.cardio_distance_miles ?? "-"} mi / ${entry.cardio_duration_minutes ?? "-"} min)`
                         : "No"}
+                    </td>
+                    <td>
+                      {entry.exercises.length > 0 ? (
+                        <details className="exercise-summary">
+                          <summary>
+                            {entry.exercises.length} exercise{entry.exercises.length > 1 ? "s" : ""}
+                          </summary>
+                          <ul>
+                            {entry.exercises.map((exercise) => (
+                              <li key={exercise.id}>{formatExerciseSummary(exercise)}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1151,15 +1227,27 @@ function App() {
                 <span>{entry.date}</span>
               </div>
               <p>{entry.weight} lbs</p>
-              <button
-                type="button"
-                className="danger"
-                onClick={() => {
-                  void deleteWeight(entry.id);
-                }}
-              >
-                Delete
-              </button>
+              {confirmDeleteWeightId === entry.id ? (
+                <div className="confirm-delete">
+                  <span>Delete this entry?</span>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      void deleteWeight(entry.id);
+                    }}
+                  >
+                    Confirm
+                  </button>
+                  <button type="button" className="ghost" onClick={() => setConfirmDeleteWeightId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="danger" onClick={() => setConfirmDeleteWeightId(entry.id)}>
+                  Delete
+                </button>
+              )}
             </div>
           ))}
         </section>
@@ -1259,6 +1347,54 @@ function App() {
             <input type="number" step="0.1" value={workoutForm.cardio_distance_miles} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_distance_miles: e.target.value })} />
             <label>Cardio Duration (minutes)</label>
             <input type="number" value={workoutForm.cardio_duration_minutes} onChange={(e) => setWorkoutForm({ ...workoutForm, cardio_duration_minutes: e.target.value })} />
+
+            <label>Exercises (optional)</label>
+            {draftExercises.length > 0 ? (
+              <ul className="exercise-draft-list">
+                {draftExercises.map((ex, i) => (
+                  <li key={i}>
+                    <span>
+                      {ex.name} — {ex.sets} sets × {ex.reps} reps
+                      {ex.weight ? ` @ ${ex.weight} lb` : ""}
+                    </span>
+                    <button type="button" className="ghost" onClick={() => removeDraftExercise(i)}>
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <input
+              placeholder="Exercise name (e.g. Bench Press)"
+              value={exerciseInput.name}
+              onChange={(e) => setExerciseInput({ ...exerciseInput, name: e.target.value })}
+            />
+            <input
+              type="number"
+              min="1"
+              placeholder="Sets"
+              value={exerciseInput.sets}
+              onChange={(e) => setExerciseInput({ ...exerciseInput, sets: e.target.value })}
+            />
+            <input
+              type="number"
+              min="1"
+              placeholder="Reps"
+              value={exerciseInput.reps}
+              onChange={(e) => setExerciseInput({ ...exerciseInput, reps: e.target.value })}
+            />
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              placeholder="Weight (lb, optional)"
+              value={exerciseInput.weight}
+              onChange={(e) => setExerciseInput({ ...exerciseInput, weight: e.target.value })}
+            />
+            <button type="button" className="ghost" onClick={addDraftExercise}>
+              + Add exercise
+            </button>
+
             <button type="submit">Add Workout</button>
           </form>
           {workoutError ? <p className="error-text">{workoutError}</p> : null}
@@ -1275,15 +1411,37 @@ function App() {
                 {workout.lift_split}
                 {workout.secondary_muscle_group ? ` / ${workout.secondary_muscle_group}` : ""}
               </p>
-              <button
-                type="button"
-                className="danger"
-                onClick={() => {
-                  void deleteWorkout(workout.id);
-                }}
-              >
-                Delete
-              </button>
+              {workout.exercises.length > 0 ? (
+                <details className="exercise-summary">
+                  <summary>{workout.exercises.length} exercise{workout.exercises.length > 1 ? "s" : ""}</summary>
+                  <ul>
+                    {workout.exercises.map((exercise) => (
+                      <li key={exercise.id}>{formatExerciseSummary(exercise)}</li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+              {confirmDeleteWorkoutId === workout.id ? (
+                <div className="confirm-delete">
+                  <span>Delete this entry?</span>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => {
+                      void deleteWorkout(workout.id);
+                    }}
+                  >
+                    Confirm
+                  </button>
+                  <button type="button" className="ghost" onClick={() => setConfirmDeleteWorkoutId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="danger" onClick={() => setConfirmDeleteWorkoutId(workout.id)}>
+                  Delete
+                </button>
+              )}
             </div>
           ))}
         </section>
