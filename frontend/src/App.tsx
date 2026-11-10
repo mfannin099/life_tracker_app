@@ -710,24 +710,24 @@ function App() {
             <h3 style={{ marginTop: 0 }}>Weight Trend</h3>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#22304a" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#333338" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 13, fill: "#9fb0c9" }}
+                  tick={{ fontSize: 13, fill: "#a8a8af" }}
                   angle={-45}
                   textAnchor="end"
                   height={80}
-                  stroke="#22304a"
+                  stroke="#333338"
                 />
                 <YAxis
                   domain={['dataMin - 5', 'dataMax + 5']}
-                  tick={{ fontSize: 12, fill: "#9fb0c9" }}
-                  stroke="#22304a"
-                  label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft', fill: "#9fb0c9" }}
+                  tick={{ fontSize: 12, fill: "#a8a8af" }}
+                  stroke="#333338"
+                  label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft', fill: "#a8a8af" }}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1a2333', border: '1px solid #22304a', borderRadius: '10px', color: '#f3f6fb' }}
-                  labelStyle={{ color: '#f3f6fb' }}
+                  contentStyle={{ backgroundColor: '#212124', border: '1px solid #333338', borderRadius: '10px', color: '#f4f4f5' }}
+                  labelStyle={{ color: '#f4f4f5' }}
                   formatter={(value) => {
                     const numericValue =
                       typeof value === "number"
@@ -739,7 +739,7 @@ function App() {
                   }}
                 />
                 <Legend
-                  wrapperStyle={{ paddingTop: '20px', color: '#9fb0c9' }}
+                  wrapperStyle={{ paddingTop: '20px', color: '#a8a8af' }}
                   iconType="line"
                 />
                 {userNames.map((userName, idx) => (
@@ -1068,17 +1068,17 @@ function App() {
             <div style={{ marginTop: "14px", marginBottom: "20px" }}>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyTrendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#22304a" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#9fb0c9" }} stroke="#22304a" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333338" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#a8a8af" }} stroke="#333338" />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fontSize: 12, fill: "#9fb0c9" }}
-                    stroke="#22304a"
-                    label={{ value: "Workouts", angle: -90, position: "insideLeft", fill: "#9fb0c9" }}
+                    tick={{ fontSize: 12, fill: "#a8a8af" }}
+                    stroke="#333338"
+                    label={{ value: "Workouts", angle: -90, position: "insideLeft", fill: "#a8a8af" }}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#1a2333", border: "1px solid #22304a", borderRadius: "10px", color: "#f3f6fb" }}
-                    labelStyle={{ color: "#f3f6fb" }}
+                    contentStyle={{ backgroundColor: "#212124", border: "1px solid #333338", borderRadius: "10px", color: "#f4f4f5" }}
+                    labelStyle={{ color: "#f4f4f5" }}
                     formatter={(value, _name, item) => {
                       const count = Number(value);
                       const isCurrentMonth = Boolean(
